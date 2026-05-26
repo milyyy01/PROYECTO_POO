@@ -12,4 +12,7 @@ from .horario import Horario
 from .modalidad import Modalidad
 from .evaluacion import Evaluacion
 from .reporte import Reporte
+from .sede import Sede
+from .oferta import Oferta
+from .periodo_academico import PeriodoAcademico
 
