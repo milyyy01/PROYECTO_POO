@@ -10,11 +10,11 @@ class Carrera:
         self._asignaturas = []
         self._estudiantes_matriculados = []
 #agregamos diccionario para simular los cupos
-self._cupos_por_sede = {
-    "Manta": cupos_totales,
-    "Chone": 40,
-    "Bahía": 30
-}
+        self._cupos_por_sede = {
+        "Manta": self._cupos_totales,  
+        "Chone": 40,
+        "Bahía": 30
+        }
 
 @property
 def nombre_carrera(self) -> str:
