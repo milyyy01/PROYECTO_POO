@@ -49,7 +49,7 @@ def mostrar_nota(self, nombre_estudiante: str):
     if nombre_estudiante in self._registro_notas:
         nota = self._registro_notas[nombre_estudiante]
         estado = "Aprobado" if self.aprobar(nota) else "Reprobado"
-        print(f"El estudiante {nombre_estudiante}" - {self._tipo} ({self._asignatura.nombre}) - Nota: {nota}/{self._puntaje_maximo} -> {estado}")
+        print(f"El estudiante {nombre_estudiante} - {self._tipo} ({self._asignatura.nombre}) - Nota: {nota}/{self._puntaje_maximo} -> {estado}")
 
 def reintentar_evaluacion(self, nombre_estudiante: str, nueva_nota: float):
     print(f"Procesando el reintento de {self._tipo} para el estudiante {nombre_estudiante}")
