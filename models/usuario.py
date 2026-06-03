@@ -23,6 +23,10 @@ class Usuario(ABC):
         self._correo = nuevo_correo 
         
     @property
+    def rol(self):
+        return self._rol
+        
+    @property
     def contrasena(self):
         raise AttributeError("La contraseña no se puede acceder directamente.")
     
@@ -30,11 +34,8 @@ class Usuario(ABC):
     def contrasena(self, nueva_contrasena):
         if len(nueva_contrasena) < 6:  
             raise ValueError("La contraseña debe tener al menos 6 caracteres.")
-        
-        tiene_mayuscula = any(caracter.isupper() for caracter in nueva_contrasena)
-        if not tiene_mayuscula:
+        if not any(caracter.isupper() for caracter in nueva_contrasena):
             raise ValueError("La contraseña debe contener al menos una letra mayúscula.")
-        
         self.__contrasena = nueva_contrasena
         
 # Métodos concretos: 

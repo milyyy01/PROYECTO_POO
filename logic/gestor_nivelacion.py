@@ -1,2 +1,1 @@
-class SistemaNivelacion:
-    pass
+

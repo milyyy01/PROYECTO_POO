@@ -1,4 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from models.usuario import Usuario
+
+if TYPE_CHECKING:
+    from models.asignatura import Asignatura
+    from models.paralelo import Paralelo
+    from models.estudiante import Estudiante
+    from models.sede import Sede
 
 class Docente(Usuario):
     def __init__(self, id, nombre, correo, contrasena, telefono, titulo, especialidad, nivel):
@@ -10,10 +18,23 @@ class Docente(Usuario):
         self.__paralelos = []
         self.__materias_asignadas = []
         self.__calificaciones_registradas = {}
+        self._sede = None
         
     @property
     def horas_asignadas(self):
         return self._horas_asignadas
+    
+    @property
+    def sede(self):
+        return self._sede
+    
+    @property
+    def materias_asignadas(self):
+        return list(self.__materias_asignadas)
+    
+    @property
+    def paralelos(self):
+        return list(self.__paralelos)
     
 # Métodos abstractos implementados:
 
@@ -24,7 +45,7 @@ class Docente(Usuario):
         else: 
             print("Materias asignadas:")
             for materia in self.__materias_asignadas:
-                print(f"-- {materia}")
+                print(f"-- {materia.nombre} ({materia.creditos} créditos)")
     
     def ver_calificaciones(self):
         if not self.__calificaciones_registradas:
@@ -34,32 +55,36 @@ class Docente(Usuario):
             print("Calificaciones registradas:")
             for estudiante, materias in self.__calificaciones_registradas.items():
                 for materia, nota in materias.items():
-                    print(f"{estudiante} - {materia}: {nota}")
+                    estado = "Aprobado" if nota >= 7.0 else "Reprobado"
+                    print(f" {estudiante} - {materia}: {nota:.2f} -> {estado}")
                     
 # Métodos concretos de Docente:
 
-    def impartir_clase(self, materia, paralelo):
-        print(f"{self.nombre} impartiendo clase de {materia} en el paralelo {paralelo}.")
+    def impartir_clase(self, asignatura: "Asignatura", paralelo):
+        print(f"{self.nombre} impartiendo clase de {asignatura.nombre} en el paralelo {paralelo.codigo}.")
     
     def asignar_horario(self, dia, hora_entrada, hora_salida):
         print(f"Horario asignado para {self.nombre}: {dia} de {hora_entrada} a {hora_salida}.")
         
-    def calificar(self, estudiante, materia, nota, comentario = None):
-        if estudiante not in self.__calificaciones_registradas:
-            self.__calificaciones_registradas[estudiante] = {}
-        self.__calificaciones_registradas[estudiante][materia] = nota
+    def calificar(self, estudiante: "Estudiante", asignatura: "Asignatura", nota, comentario = None):
+        if not (0.0 <= nota <= 10.0):
+            raise ValueError("La nota debe estar entre 0.0 y 10.0.")
+        if estudiante.nombre not in self.__calificaciones_registradas:
+            self.__calificaciones_registradas[estudiante.nombre] = {}
+        self.__calificaciones_registradas[estudiante.nombre][asignatura.nombre] = nota
         
+        estudiante._registrar_calificacion(asignatura.nombre, nota)
+        mensaje = f"Calificación registrada para {estudiante.nombre} en {asignatura.nombre}: {nota:.2f}"
         if comentario:
-            print(f"Calificación registrada para {estudiante} en {materia}: {nota}. Comentario: {comentario}")
-        else:
-            print(f"Calificación registrada para {estudiante} en {materia}: {nota}.")
-            
+            mensaje += f". Comentario: {comentario}"
+        print(mensaje)
+        
     def marcar_asistencia(self, estudiante, presente):
         estado = "Presente" if presente else "Ausente"
-        print(f"Asistencia de {estudiante}: {estado}.")
+        print(f"Asistencia de {estudiante.nombre}: {estado}")
         
-    def subir_material(self, materia, material):
-        print(f"Se subió archivo '{material}' para la materia {materia}.")
+    def subir_material(self, asignatura: "Asignatura", archivo):
+        asignatura.subir_archivo(archivo)
         
     def ver_paralelos(self):
         if not self.__paralelos:
@@ -68,19 +93,28 @@ class Docente(Usuario):
         else:
             print(f"Paralelos asignados a {self.nombre}:")
             for paralelo in self.__paralelos:
-                print(f"- {paralelo}")
+                print(f"- {paralelo.codigo}")
+    
+    def asignar_sede(self, sede: "Sede"):
+        self._sede = sede
+        print(f"{self.nombre} asignado a la sede '{sede.nombre_sede}'.")
                 
 # Métodos internos:
 
-    def _asignar_materia(self, materia):
-            self.__materias_asignadas.append(materia)
+    def _asignar_materia(self, asignatura: "Asignatura"):
+        if asignatura not in self.__materias_asignadas:
+            self.__materias_asignadas.append(asignatura)
 
-    def _asignar_paralelo(self, paralelo):
+    def _asignar_paralelo(self, paralelo: "Paralelo"):
+        if paralelo not in self.__paralelos:
             self.__paralelos.append(paralelo)
             
     def _agregar_horas(self, horas):
-            self._horas_asignadas += horas
+        if horas <= 0:
+            raise ValueError("Las horas deben ser mayor a cero.")
+        self._horas_asignadas += horas
             
     def __str__(self):
-            return (f"[Docente] {self.nombre} - Título: {self.titulo} - "
-                    f"Especialidad: {self.especialidad} - Horas Asignadas: {self._horas_asignadas}")
+        sede_nombre = self._sede.nombre_sede if self._sede else "Sin sede"
+        return (f"[Docente] {self.nombre} - Título: {self.titulo} - "
+                    f"Especialidad: {self.especialidad} - Horas Asignadas: {self._horas_asignadas} - Sede: {sede_nombre}")

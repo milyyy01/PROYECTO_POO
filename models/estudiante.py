@@ -1,7 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from models.usuario import Usuario
 
+if TYPE_CHECKING:
+    from models.asignatura import Asignatura
+    from models.sede import Sede
+    from models.carrera import Carrera
+
 class Estudiante(Usuario):
-    def __init__(self, id, nombre, correo, contrasena, telefono, fecha_matricula, sede, carrera, estado_academico = "Activo"):
+    def __init__(self, id, nombre, correo, contrasena, telefono, fecha_matricula, sede: "Sede", carrera: "Carrera", estado_academico = "Activo"):
         super().__init__(id, nombre, correo, contrasena, rol="Estudiante", telefono=telefono)
         self.fecha_matricula = fecha_matricula
         self.__promedio = 0.0
@@ -16,6 +23,10 @@ class Estudiante(Usuario):
     def promedio(self):
         return self.__promedio
     
+    @property
+    def tareas_enviadas(self):
+        return list(self.__tareas_enviadas)
+    
 # Métodos abstractos implementados:
 
     def ver_materias(self):
@@ -25,7 +36,7 @@ class Estudiante(Usuario):
         else: 
             print("Materias inscritas:")
             for materia in self.__materias:
-                print(f"-- {materia}")
+                print(f"-- {materia.nombre} ({materia.creditos} créditos)")
                 
     def ver_calificaciones(self):
         if not self.__calificaciones:
@@ -34,11 +45,15 @@ class Estudiante(Usuario):
         else:
             print("Calificaciones:")
             for materia, calificacion in self.__calificaciones.items():
-                print(f"{materia}: {calificacion}")
+                estado = "Aprobado" if calificacion >= 7.0 else "Reprobado"
+                print(f"  {materia}: {calificacion:.2f} → {estado}")
+            print(f"  Promedio actual: {self.__promedio:.2f}")
                 
 # Métodos concretos de Estudiante:
 
     def enviar_tarea(self, tarea):
+        if not tarea.strip():
+            raise ValueError("El nombre de la tarea no puede estar vacío.")
         self.__tareas_enviadas.append(tarea)
         print("Tarea enviada exitosamente.")
 
@@ -49,19 +64,29 @@ class Estudiante(Usuario):
         else:
             print("No se encontró la tarea en tus entregas.")
 
-    def consultar_asignaturas(self, asignatura):
-        print(f"Consultando información de la asignatura: {asignatura}")
+    def consultar_asignaturas(self, asignatura: "Asignatura"):
+        print(f"Consultando '{asignatura.nombre}': {asignatura.creditos} créditos.")
+        contenido = asignatura.obtener_material()
+        if contenido:
+            print(f"  Contenido: {contenido}")
 
-    def descargar_material(self, material):
-        print(f"{material} descargado exitosamente.")
+    def descargar_material(self, asignatura: "Asignatura", archivo):
+        materiales = asignatura.obtener_material()
+        if archivo in (materiales or ""):
+            print(f"'{archivo}' descargado exitosamente de '{asignatura.nombre}'.")
+        else:
+            print(f"Material '{archivo}' disponible. Descargando desde '{asignatura.nombre}'...")
 
     def agregar_comentarios(self, comentario):
-        print(f"Comentario agregado exitosamente: {comentario}")
+        if not comentario.strip():
+            raise ValueError("El comentario no puede estar vacío.")
+        print(f"Comentario agregado por {self.nombre}: '{comentario}'")
     
 # Métodos internos:
 
-    def _agregar_materia(self, materia):
-        self.__materias.append(materia)
+    def _agregar_materia(self, asignatura: "Asignatura"):
+        if asignatura not in self.__materias:
+            self.__materias.append(asignatura)
         
     def _registrar_calificacion(self, materia, nota):
         self.__calificaciones[materia] = nota
@@ -72,7 +97,9 @@ class Estudiante(Usuario):
             self.__promedio = sum(self.__calificaciones.values()) / len(self.__calificaciones)
            
     def __str__(self):
-        return (f"[Estudiante] {self.nombre} - Carrera: {self.carrera} - "
-                f"Sede: {self.sede} - Promedio: {self.__promedio:.2f}")
+        sede_nombre = self.sede.nombre_sede if self.sede else "Sin sede"
+        carrera_nombre = self.carrera.nombre_carrera if self.carrera else "Sin carrera"
+        return (f"[Estudiante] {self.nombre} - Carrera: {carrera_nombre} - "
+                f"Sede: {sede_nombre} - Promedio: {self.__promedio:.2f} - Estado: {self.estado_academico}")
 
     

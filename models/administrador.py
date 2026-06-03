@@ -1,4 +1,10 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from models.usuario import Usuario
+
+if TYPE_CHECKING:
+    from models.docente import Docente
+    from models.periodo_academico import PeriodoAcademico
 
 class Administrador(Usuario):
     def __init__(self, id, nombre, correo, contrasena, telefono, nivel_autoridad, departamento_asignado):
@@ -37,13 +43,13 @@ class Administrador(Usuario):
         self.__registrar_accion(f"Validó registro del docente {nombre_docente}")
         return True 
     
-    def bloquear_usuario(self, usuario):
+    def bloquear_usuario(self, usuario: Usuario):
         print(f"Usuario {usuario.nombre} bloqueado exitosamente.")
         self.__registrar_accion(f"Bloqueó al usuario: {usuario.nombre}")
         
     # Sobrecarga simulada: resetear contraseña con o sin notificación
     
-    def resetear_contrasena(self, usuario, nueva_contrasena, notificar = True):
+    def resetear_contrasena(self, usuario: Usuario, nueva_contrasena, notificar = True):
         usuario.contrasena = nueva_contrasena 
         if notificar:
             print(f"Contraseña de {usuario.nombre} reseteada. "
@@ -53,23 +59,28 @@ class Administrador(Usuario):
         self.__registrar_accion(f"Reseteó contraseña de {usuario.nombre}")
     
     def crear_periodo_academico(self, fecha_inicio, fecha_fin, semestre):
-        print(f"Periodo académico creado: {semestre}({fecha_inicio} - {fecha_fin}).")
-        self.__registrar_accion(f"Creó periodo académico {semestre}")
+        print(f"Periodo académico creado: {semestre} ({fecha_inicio} - {fecha_fin}).")
+        self.__registrar_accion(f"Creó periodo académico: {semestre}")
         
-    def cerrar_periodo_academico(self, periodo):
-        periodo.culminar_periodo()
-        print(f"Periodo académico {periodo.semestre} cerrado exitosamente.")
+    def cerrar_periodo_academico(self, periodo: "PeriodoAcademico"):
+        resultado = periodo.culminar_periodo()
+        print(f"Periodo académico {periodo.semestre} cerrado exitosamente. {resultado}")
         self.__registrar_accion(f"Cerró periodo académico {periodo.semestre}")
         
     def gestionar_cupos(self, cantidad):
+        if cantidad <= 0:
+            raise ValueError("La cantidad de cupos debe ser mayor a cero.")
         self._cupos_gestionados += cantidad
         print(f"Total de cupos gestionados: {self._cupos_gestionados}")
         self.__registrar_accion(f"Gestión de {cantidad} cupos. Total gestionados: {self._cupos_gestionados}")
         
-    def asignar_carga_horaria(self, docente, horas):
-        docente._agregar_horas(horas)
-        print(f"{horas} horas asignadas a {docente.nombre}. Total horas: {docente.horas_asignadas}")
-        self.__registrar_accion(f"Asignó {horas} horas a {docente.nombre}")
+    def asignar_carga_horaria(self, docente: "Docente", horas):
+        if horas <= 0:
+            raise ValueError("Las horas deben ser mayor a cero.")
+        else:
+            docente._agregar_horas(horas)
+            print(f"{horas} horas asignadas a {docente.nombre}. Total horas: {docente.horas_asignadas}")
+            self.__registrar_accion(f"Asignó {horas} horas a {docente.nombre}")
         
 # Métodos internos:
 
