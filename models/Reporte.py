@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 class Reporte:
 
-    def _init_(self, tipo_reporte, fecha_generacion=None):
+    def __init__(self, tipo_reporte, fecha_generacion=None):
         self.tipo_reporte = tipo_reporte
         self.fecha_generacion = fecha_generacion if fecha_generacion else datetime.now()
 
@@ -50,7 +50,7 @@ class Reporte:
         self.__eliminado = True
         print(f"Reporte '{self.tipo_reporte}' eliminado exitosamente.")
 
-    def _str_(self):
+    def __str__(self):
         estado = "Eliminado" if self.__eliminado else "Activo"
         return (
             f"[Reporte] Tipo: {self.tipo_reporte} | "
@@ -86,7 +86,7 @@ class IReporteBuilder(ABC):
 
 class ReporteAcademicoBuilder(IReporteBuilder):
 
-    def _init_(self):
+    def __init__(self):
         self._reporte = None
 
     def reset(self, tipo_reporte: str):
@@ -122,7 +122,7 @@ class ReporteAcademicoBuilder(IReporteBuilder):
 
 class DirectorReportes:
 
-    def _init_(self):
+    def __init__(self):
         self._builder = None
 
     @property
