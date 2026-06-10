@@ -18,6 +18,10 @@ class Paralelo:
         self.__lista_estudiantes = []
         self.__estado = "Activo"
 
+# Sincronización automática bidireccional con el docente
+        if self._docente:
+            self._docente._asignar_paralelo(self)
+            
     # Getter
 
     @property

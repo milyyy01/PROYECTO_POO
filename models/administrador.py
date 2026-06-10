@@ -5,6 +5,7 @@ from models.usuario import Usuario
 if TYPE_CHECKING:
     from models.docente import Docente
     from models.periodo_academico import PeriodoAcademico
+    from models.sede import Sede
 
 class Administrador(Usuario):
     def __init__(self, id, nombre, correo, contrasena, telefono, nivel_autoridad, departamento_asignado):
@@ -81,6 +82,11 @@ class Administrador(Usuario):
             docente._agregar_horas(horas)
             print(f"{horas} horas asignadas a {docente.nombre}. Total horas: {docente.horas_asignadas}")
             self.__registrar_accion(f"Asignó {horas} horas a {docente.nombre}")
+            
+    def asignar_sede_a_docente(self, docente: "Docente", sede: "Sede"):
+        docente._establecer_sede(sede)
+        print(f"[Gestión Institucional] Sede '{sede.nombreSede}' asignada exitosamente al docente {docente.nombre}.")
+        self.__registrar_accion(f"Asignó la sede {sede.nombreSede} al docente {docente.nombre}")
         
 # Métodos internos:
 

@@ -94,12 +94,11 @@ class Docente(Usuario):
             print(f"Paralelos asignados a {self.nombre}:")
             for paralelo in self.__paralelos:
                 print(f"- {paralelo.codigo}")
-    
-    def asignar_sede(self, sede: "Sede"):
-        self._sede = sede
-        print(f"{self.nombre} asignado a la sede '{sede.nombre_sede}'.")
                 
 # Métodos internos:
+
+    def _establecer_sede(self, sede: "Sede"):
+        self._sede = sede
 
     def _asignar_materia(self, asignatura: "Asignatura"):
         if asignatura not in self.__materias_asignadas:

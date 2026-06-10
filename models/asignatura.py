@@ -79,7 +79,7 @@ class Asignatura:
         return info
 
     #Metodo de composicion con evaluación
-    def crear_evaluación(self, puntaje_minimo, puntaje_maximo, tipo, fecha_apertura, fecha_cierre):
+    def crear_evaluacion(self, puntaje_minimo, puntaje_maximo, tipo, fecha_apertura, fecha_cierre):
         # Importación local para evitar importación circular
         from models.evaluacion import Evaluacion
         nueva_evaluacion = Evaluacion(
