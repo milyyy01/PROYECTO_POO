@@ -6,15 +6,17 @@ if TYPE_CHECKING:
     from models.docente import Docente
     from models.horario import Horario
     from models.modalidad import Modalidad
+    from models.asignatura import Asignatura
 
 class Paralelo:
-    def __init__(self, codigo, capacidad, docente: "Docente", horario: "Horario", modalidad: "Modalidad"):
+    def __init__(self, codigo, capacidad, docente: "Docente", horario: "Horario", modalidad: "Modalidad", asignatura: "Asignatura" = None):
         self._codigo = codigo
         self.capacidad = capacidad
         self._cupo_disponible = capacidad
         self._docente = docente
         self._horario = horario
         self._modalidad = modalidad
+        self._asignatura = asignatura
         self.__lista_estudiantes = []
         self.__estado = "Activo"
 
@@ -51,6 +53,10 @@ class Paralelo:
     @property
     def modalidad(self):
         return self._modalidad
+
+    @property
+    def asignatura(self):
+        return self._asignatura
     
 
     # Métodos
@@ -94,6 +100,7 @@ class Paralelo:
         print("===== INFORMACIÓN DEL PARALELO =====")
         print(f"Código: {self._codigo}")
         print(f"Docente: {self.docente.nombre}")
+        print(f"Asignatura: {self.asignatura.nombre if self.asignatura else 'Sin asignatura'}")
         print(f"Modalidad: {self.modalidad.tipo}")
         print(f"Horario: {self.horario.dia} | "
               f"{self.horario.hora_inicio} - {self.horario.hora_fin}")
@@ -112,4 +119,5 @@ class Paralelo:
     def __str__(self):
         return (f"[Paralelo] Código: {self._codigo} | "
                 f"Docente: {self.docente.nombre} | "
+                f"Asignatura: {self.asignatura.nombre if self.asignatura else 'Sin asignatura'} | "
                 f"Estado: {self.__estado}")

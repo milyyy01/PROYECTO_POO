@@ -15,7 +15,7 @@ from models.horario import Horario
 from models.modalidad import Modalidad
 from models.periodo_academico import PeriodoAcademico
 from models.oferta import Oferta
-from gestor_nivelacion import GestorNivelacion
+from logic.gestor_nivelacion import GestorNivelacion
 
 # 1. ADMINISTRADOR Y SISTEMA
 

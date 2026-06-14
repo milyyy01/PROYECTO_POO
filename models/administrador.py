@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from models import docente, sede
 from models.usuario import Usuario
 
 if TYPE_CHECKING:

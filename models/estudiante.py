@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 from typing import TYPE_CHECKING
 from models.usuario import Usuario
 
@@ -26,6 +26,10 @@ class Estudiante(Usuario):
     @property
     def tareas_enviadas(self):
         return list(self.__tareas_enviadas)
+
+    @property
+    def calificaciones(self):
+        return dict(self.__calificaciones)
     
 # Métodos abstractos implementados:
 
@@ -41,13 +45,14 @@ class Estudiante(Usuario):
     def ver_calificaciones(self):
         if not self.__calificaciones:
             print("No tienes calificaciones registradas por el momento.")
-            return
+            return {}
         else:
             print("Calificaciones:")
             for materia, calificacion in self.__calificaciones.items():
                 estado = "Aprobado" if calificacion >= 7.0 else "Reprobado"
-                print(f"  {materia}: {calificacion:.2f} → {estado}")
+                print(f"  {materia}: {calificacion:.2f} -> {estado}")
             print(f"  Promedio actual: {self.__promedio:.2f}")
+            return dict(self.__calificaciones)
                 
 # Métodos concretos de Estudiante:
 
@@ -106,7 +111,8 @@ class Estudiante(Usuario):
             "promedio": self.promedio,
             "estado_academico": self.estado_academico,
             "sede": self.sede.nombre_sede if self.sede else None,
-            "carrera": self.carrera.nombre_carrera if self.carrera else None
+            "carrera": self.carrera.nombre_carrera if self.carrera else None,
+            "calificaciones": self.calificaciones
     }
 
     def __str__(self):
@@ -114,15 +120,4 @@ class Estudiante(Usuario):
         carrera_nombre = self.carrera.nombre_carrera if self.carrera else "Sin carrera"
         return (f"[Estudiante] {self.nombre} - Carrera: {carrera_nombre} - "
                 f"Sede: {sede_nombre} - Promedio: {self.__promedio:.2f} - Estado: {self.estado_academico}")
-def to_dict(self):
-    return {
-        "id": self.id,
-        "nombre": self.nombre,
-        "correo": self.correo,
-        "telefono": self.telefono,
-        "promedio": self.promedio,
-        "estado_academico": self.estado_academico,
-        "sede": self.sede.nombre_sede if self.sede else None,
-        "carrera": self.carrera.nombre_carrera if self.carrera else None
-    }
-    
+

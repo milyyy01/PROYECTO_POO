@@ -5,7 +5,7 @@ from models.paralelo import Paralelo
 from models.asignatura import Asignatura
 from models.sede import Sede
 from models.administrador import Administrador
-from models.Reporte import Reporte
+from models.Reporte import Reporte, ReporteAcademicoBuilder, DirectorReportes
 from models.horario import Horario
 from models.modalidad import Modalidad
 from models.carrera import Carrera
@@ -26,6 +26,7 @@ class SistemaNivelacion:
         self._asignaturas = []
         self._sedes = []
         self._reportes = []
+        self._director_reportes = DirectorReportes()
         
     # Propiedades 
     
@@ -120,12 +121,19 @@ class SistemaNivelacion:
  
     # GENERACIÓN DE REPORTES: 
  
-    def generar_reporte(self, tipo_reporte, contenido):
-        from models.Reporte import Reporte
-        reporte = Reporte(tipo_reporte=tipo_reporte)
-        reporte.generar_contenido(contenido)
+    def generar_reporte(self, solicitante_nombre, datos):
+        """
+        Genera un reporte usando el patrón Builder:
+        DirectorReportes + ReporteAcademicoBuilder (definidos en Reporte.py).
+        'datos' debe ser una lista de líneas/registros para el cuerpo del reporte.
+        """
+        self._director_reportes.builder = ReporteAcademicoBuilder()
+        reporte = self._director_reportes.generar_reporte_calificaciones(
+            estudiante_nombre=solicitante_nombre,
+            notas=datos
+        )
         self._reportes.append(reporte)
-        print(f"Reporte '{tipo_reporte}' generado por '{self.nombre_institucion}'.")
+        print(f"Reporte generado por '{self.nombre_institucion}' para '{solicitante_nombre}'.")
         return reporte
  
     def __str__(self):
@@ -137,5 +145,3 @@ class SistemaNivelacion:
             f"Paralelos: {len(self._paralelos)} | "
             f"Sedes: {len(self._sedes)}"
         )
-
-

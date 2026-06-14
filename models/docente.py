@@ -130,15 +130,3 @@ class Docente(Usuario):
         sede_nombre = self._sede.nombre_sede if self._sede else "Sin sede"
         return (f"[Docente] {self.nombre} - Título: {self.titulo} - "
                     f"Especialidad: {self.especialidad} - Horas Asignadas: {self._horas_asignadas} - Sede: {sede_nombre}")
-def to_dict(self):
-    return {
-        "id": self.id,
-        "nombre": self.nombre,
-        "correo": self.correo,
-        "telefono": self.telefono,
-        "titulo": self.titulo,
-        "especialidad": self.especialidad,
-        "nivel": self.nivel,
-        "horas_asignadas": self.horas_asignadas,
-        "sede": self.sede.nombre_sede if self.sede else None
-    }

@@ -1,4 +1,4 @@
-"""
+﻿"""
 app_gui.py — Interfaz gráfica SIGEN con Tkinter
 Ejecutar desde la raíz del proyecto: python app_gui.py
 """
@@ -10,7 +10,7 @@ from io import StringIO
 import sys
 import json
 
-# ── Modelos ──────────────────────────────────────────────────────────────────
+# Modelos:
 from models import usuario
 from models.administrador import Administrador
 from models.estudiante import Estudiante
@@ -23,7 +23,7 @@ from models.horario import Horario
 from models.modalidad import Modalidad
 from models.periodo_academico import PeriodoAcademico
 from models.oferta import Oferta
-from gestor_nivelacion import GestorNivelacion
+from logic.gestor_nivelacion import GestorNivelacion
 
 
 # UTILIDAD: capturar prints del sistema en la consola de la GUI
@@ -73,8 +73,55 @@ estado = EstadoSistema()
 def guardar_datos():
     datos = {
         "sedes": [s.to_dict() for s in estado.sedes],
+        "carreras": [
+            {
+                "id_carrera": c.id_carrera,
+                "nombre_carrera": c.nombre_carrera,
+                "facultad": c.facultad,
+                "duracion_semestre": c.duracion_semestre,
+                "creditos_totales": c.creditos_totales,
+                "cupos_totales": c.cupos_totales,
+                "sede_id": next((s.id_sede for s in estado.sedes if c in s._carreras), None),
+            }
+            for c in estado.carreras
+        ],
         "docentes": [d.to_dict() for d in estado.docentes],
-        "estudiantes": [e.to_dict() for e in estado.estudiantes]
+        "estudiantes": [e.to_dict() for e in estado.estudiantes],
+        "asignaturas": [
+            {
+                "id_asignatura": a.id_asignatura,
+                "nombre": a.nombre,
+                "contenido": getattr(a, "_contenido", ""),
+                "creditos": a.creditos,
+                "cupos_maximos": a.cupos_maximos,
+                "docente_id": a.docente.id if a.docente else None,
+                "carrera_id": next((c.id_carrera for c in estado.carreras if a in c.obtener_asignaturas()), None),
+            }
+            for a in estado.asignaturas
+        ],
+        "paralelos": [
+            {
+                "codigo": p.codigo,
+                "capacidad": p.capacidad,
+                "docente_id": p.docente.id if p.docente else None,
+                "asignatura_id": p.asignatura.id_asignatura if p.asignatura else None,
+                "sede_id": next((s.id_sede for s in estado.sedes if p in s._paralelos), None),
+                "modalidad": {
+                    "id_modalidad": p.modalidad.id_modalidad,
+                    "tipo": p.modalidad.tipo,
+                    "descripcion": p.modalidad.descripcion,
+                    "duracion_horas": p.modalidad.duracion_horas,
+                },
+                "horario": {
+                    "id_horario": p.horario.id_horario,
+                    "dia": p.horario.dia,
+                    "hora_inicio": p.horario.hora_inicio,
+                    "hora_fin": p.horario.hora_fin,
+                    "aula": p.horario.aula,
+                },
+            }
+            for p in estado.paralelos
+        ]
     }
 
     with open("datos.json", "w", encoding="utf-8") as archivo:
@@ -85,44 +132,174 @@ def cargar_datos():
         with open("datos.json", "r", encoding="utf-8") as archivo:
             datos = json.load(archivo)
 
+        # --- SEDES ---
         for s in datos.get("sedes", []):
-            estado.sedes.append(
-                Sede(
-                    id_sede=s["id_sede"],
-                    nombre_sede=s["nombre_sede"],
-                    direccion=s["direccion"],
-                    ciudad=s["ciudad"],
-                    capacidad_total=s["capacidad_total"]
+            if not any(sede.id_sede == s["id_sede"] for sede in estado.sedes):
+                estado.sedes.append(
+                    Sede(
+                        id_sede=s["id_sede"],
+                        nombre_sede=s["nombre_sede"],
+                        direccion=s["direccion"],
+                        ciudad=s["ciudad"],
+                        capacidad_total=s["capacidad_total"]
+                    )
                 )
-            )
 
+        # --- CARRERAS (reconstruye y enlaza con su sede) ---
+        for c in datos.get("carreras", []):
+            if any(car.id_carrera == c["id_carrera"] for car in estado.carreras):
+                continue
+            carrera = Carrera(
+                id_carrera=c["id_carrera"],
+                nombre_carrera=c["nombre_carrera"],
+                facultad=c["facultad"],
+                duracion_semestre=c["duracion_semestre"],
+                creditos_totales=c["creditos_totales"],
+                cupos_totales=c["cupos_totales"],
+            )
+            estado.carreras.append(carrera)
+
+            sede_id = c.get("sede_id")
+            if sede_id is not None:
+                sede = next((s for s in estado.sedes if s.id_sede == sede_id), None)
+                if sede:
+                    sede.agregar_carrera(carrera)
+
+        # --- DOCENTES (reconstruye y enlaza con su sede) ---
         for d in datos.get("docentes", []):
-            estado.docentes.append(
-                Docente(
-                    id=d["id"],
-                    nombre=d["nombre"],
-                    correo=d["correo"],
-                    contrasena="1234",
-                    telefono=d["telefono"],
-                    titulo=d["titulo"],
-                    especialidad=d["especialidad"],
-                    nivel=d["nivel"]
-                )
+            if any(doc.id == d["id"] for doc in estado.docentes):
+                continue
+            docente = Docente(
+                id=d["id"],
+                nombre=d["nombre"],
+                correo=d["correo"],
+                contrasena="1234",
+                telefono=d["telefono"],
+                titulo=d["titulo"],
+                especialidad=d["especialidad"],
+                nivel=d["nivel"]
             )
 
+            sede_nombre = d.get("sede")
+            if sede_nombre:
+                sede = next((s for s in estado.sedes if s.nombre_sede == sede_nombre), None)
+                if sede:
+                    docente._establecer_sede(sede)
+
+            horas = d.get("horas_asignadas", 0)
+            if horas:
+                docente._agregar_horas(horas)
+
+            estado.docentes.append(docente)
+
+        # --- ESTUDIANTES (reconstruye y enlaza con sede y carrera) ---
         for e in datos.get("estudiantes", []):
-            estado.estudiantes.append(
-                Estudiante(
-                    id=e["id"],
-                    nombre=e["nombre"],
-                    correo=e["correo"],
-                    contrasena="1234",
-                    telefono=e["telefono"],
-                    fecha_matricula=date.today(),
-                    sede=None,
-                    carrera=None
-                )
+            if any(est.id == e["id"] for est in estado.estudiantes):
+                continue
+
+            sede = None
+            carrera = None
+
+            sede_id = e.get("sede_id")
+            if sede_id is not None:
+                sede = next((s for s in estado.sedes if s.id_sede == sede_id), None)
+            elif e.get("sede"):
+                sede = next((s for s in estado.sedes if s.nombre_sede == e["sede"]), None)
+
+            carrera_id = e.get("carrera_id")
+            if carrera_id is not None:
+                carrera = next((c for c in estado.carreras if c.id_carrera == carrera_id), None)
+            elif e.get("carrera"):
+                carrera = next((c for c in estado.carreras if c.nombre_carrera == e["carrera"]), None)
+
+            estudiante = Estudiante(
+                id=e["id"],
+                nombre=e["nombre"],
+                correo=e["correo"],
+                contrasena="1234",
+                telefono=e["telefono"],
+                fecha_matricula=date.today(),
+                sede=sede,
+                carrera=carrera,
+                estado_academico=e.get("estado_academico", "Activo"),
             )
+
+            for materia, nota in e.get("calificaciones", {}).items():
+                estudiante._registrar_calificacion(materia, float(nota))
+
+            estado.estudiantes.append(estudiante)
+
+        # --- ASIGNATURAS (reconstruye y enlaza con docente y carrera) ---
+        for a in datos.get("asignaturas", []):
+            if any(asig.id_asignatura == a["id_asignatura"] for asig in estado.asignaturas):
+                continue
+
+            asignatura = Asignatura(
+                id_asignatura=a["id_asignatura"],
+                nombre=a["nombre"],
+                contenido=a.get("contenido", ""),
+                creditos=int(a.get("creditos", 0)),
+            )
+
+            cupos = int(a.get("cupos_maximos", 0) or 0)
+            if cupos > 0:
+                asignatura.asignar_cupos(cupos)
+
+            docente_id = a.get("docente_id")
+            docente = next((d for d in estado.docentes if d.id == docente_id), None)
+            if docente:
+                asignatura.asignar_docente(docente)
+
+            carrera_id = a.get("carrera_id")
+            carrera = next((c for c in estado.carreras if c.id_carrera == carrera_id), None)
+            if carrera:
+                carrera.agregar_asignatura(asignatura)
+
+            estado.asignaturas.append(asignatura)
+
+        # --- PARALELOS (reconstruye horario, modalidad y asignatura) ---
+        for p in datos.get("paralelos", []):
+            if any(par.codigo == p["codigo"] for par in estado.paralelos):
+                continue
+
+            docente = next((d for d in estado.docentes if d.id == p.get("docente_id")), None)
+            asignatura = next((a for a in estado.asignaturas if a.id_asignatura == p.get("asignatura_id")), None)
+            if not docente or not asignatura:
+                continue
+
+            modalidad_data = p.get("modalidad", {})
+            modalidad = Modalidad(
+                id_modalidad=modalidad_data.get("id_modalidad", len(estado.modalidades) + 1),
+                tipo=modalidad_data.get("tipo", "Presencial"),
+                descripcion=modalidad_data.get("descripcion", "Modalidad del paralelo"),
+                duracion_horas=modalidad_data.get("duracion_horas", 2),
+            )
+
+            horario_data = p.get("horario", {})
+            horario = Horario(
+                id_horario=horario_data.get("id_horario", f"H{len(estado.horarios) + 1:03d}"),
+                dia=horario_data.get("dia", "Lunes"),
+                hora_inicio=horario_data.get("hora_inicio", "07:00"),
+                hora_fin=horario_data.get("hora_fin", "09:00"),
+                aula=horario_data.get("aula", ""),
+            )
+
+            paralelo = Paralelo(
+                codigo=p["codigo"],
+                capacidad=int(p.get("capacidad", 0)),
+                docente=docente,
+                horario=horario,
+                modalidad=modalidad,
+                asignatura=asignatura,
+            )
+
+            sede = next((s for s in estado.sedes if s.id_sede == p.get("sede_id")), None)
+            if sede:
+                sede.agregar_paralelo(paralelo)
+
+            estado.paralelos.append(paralelo)
+            estado.modalidades.append(modalidad)
+            estado.horarios.append(horario)
 
         print("Datos cargados correctamente.")
 
@@ -155,6 +332,12 @@ def iniciar_sistema_automatico():
 
     for estudiante in estado.estudiantes:
         estado.gestor.registrar_estudiante(estudiante)
+
+    for asignatura in estado.asignaturas:
+        estado.gestor.registrar_asignatura(asignatura)
+
+    for paralelo in estado.paralelos:
+        estado.gestor.registrar_paralelo(paralelo)
 
 def iniciar_sesion(correo, contrasena):
     correo = correo.strip()
@@ -237,6 +420,38 @@ def separador(parent, row=None):
     else:
         sep.pack(fill="x", pady=8)
 
+def mostrar_texto(titulo, contenido):
+    ventana = tk.Toplevel()
+    ventana.title(titulo)
+    ventana.geometry("650x420")
+    ventana.configure(bg=COLORS["bg"])
+
+    texto = scrolledtext.ScrolledText(
+        ventana,
+        wrap="word",
+        bg="#0f0f1a",
+        fg=COLORS["text"],
+        insertbackground=COLORS["text"],
+        font=("Courier New", 10),
+        relief="flat",
+    )
+    texto.pack(fill="both", expand=True, padx=12, pady=12)
+    texto.insert(tk.END, contenido)
+    texto.configure(state="disabled")
+
+def texto_calificaciones(estudiante):
+    calificaciones = estudiante.ver_calificaciones()
+    if not calificaciones:
+        return f"{estudiante.nombre} no tiene calificaciones registradas."
+
+    lineas = [f"Calificaciones de {estudiante.nombre}", ""]
+    for materia, nota in calificaciones.items():
+        estado_nota = "Aprobado" if nota >= 7.0 else "Reprobado"
+        lineas.append(f"{materia}: {nota:.2f} -> {estado_nota}")
+    lineas.append("")
+    lineas.append(f"Promedio actual: {estudiante.promedio:.2f}")
+    return "\n".join(lineas)
+
 
 # VENTANA PRINCIPAL
 class LoginWindow(tk.Tk):
@@ -299,7 +514,7 @@ class AppSIGEN(tk.Tk):
         self._construir_ui()
 
     def _construir_ui(self):
-        # ── Header ────────────────────────────────────────────────────────────
+        # Header:
         header = tk.Frame(self, bg=COLORS["accent"], pady=10)
         header.pack(fill="x")
         tk.Label(
@@ -309,7 +524,7 @@ class AppSIGEN(tk.Tk):
             bg=COLORS["accent"], fg="white",
         ).pack()
 
-        # ── Body ──────────────────────────────────────────────────────────────
+        # Body:
         body = tk.Frame(self, bg=COLORS["bg"])
         body.pack(fill="both", expand=True, padx=12, pady=8)
 
@@ -339,7 +554,7 @@ class AppSIGEN(tk.Tk):
         console_frame = tk.Frame(self, bg=COLORS["bg"])
         console_frame.pack(fill="x", padx=12, pady=(0, 8))
         tk.Label(
-            console_frame, text="📋 Consola del sistema",
+            console_frame, text="Consola del sistema",
             font=("Segoe UI", 9, "bold"),
             bg=COLORS["bg"], fg=COLORS["text2"]
         ).pack(anchor="w")
@@ -355,7 +570,7 @@ class AppSIGEN(tk.Tk):
         self._stdout_gui = ConsolaGUI(self.consola)
         self._stdout_gui.activar()
 
-        # ── Pestañas ──────────────────────────────────────────────────────────
+        # Pestañas: 
         self.tab_inicio    = TabInicio(nb, self)
         self.tab_sede      = TabSede(nb)
         self.tab_docentes  = TabDocentes(nb)
@@ -471,10 +686,10 @@ class TabInicio(tk.Frame):
             estado.admin = admin
             estado.gestor = GestorNivelacion(nombre_inst, admin)
             self._lbl_estado.config(
-                text=f"✅ Sistema iniciado como: {nombre_admin}",
+                text=f"Sistema iniciado como: {nombre_admin}",
                 fg=COLORS["success"]
             )
-            messagebox.showinfo("SIGEN", f"✅ Sistema iniciado correctamente.\nBienvenido, {nombre_admin}.")
+            messagebox.showinfo("SIGEN", f"Sistema iniciado correctamente.\nBienvenido, {nombre_admin}.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
 
@@ -518,9 +733,20 @@ class TabSede(tk.Frame):
     def _registrar(self):
         if not self._validar_sistema(): return
         try:
+            id_sede = int(self._entries["ID Sede"].get())
+            nombre_sede = self._entries["Nombre"].get().strip()
+
+            if not nombre_sede:
+                messagebox.showwarning("Campos incompletos", "Ingresa el nombre de la sede.")
+                return
+
+            if any(s.id_sede == id_sede for s in estado.sedes):
+                messagebox.showwarning("Duplicado", "Ya existe una sede con ese ID.")
+                return
+
             sede = Sede(
-                id_sede=int(self._entries["ID Sede"].get()),
-                nombre_sede=self._entries["Nombre"].get().strip(),
+                id_sede=id_sede,
+                nombre_sede=nombre_sede,
                 direccion=self._entries["Dirección"].get().strip(),
                 ciudad=self._entries["Ciudad"].get().strip(),
                 capacidad_total=int(self._entries["Capacidad total"].get()),
@@ -563,8 +789,8 @@ class TabDocentes(tk.Frame):
         f.pack()
 
         campos = ["ID", "Nombre", "Correo", "Contraseña", "Teléfono", "Título", "Especialidad", "Nivel"]
-        defaults = ["10", "Ana Torres", "atorres@uleam.edu.ec", "Docente1", "0987654321",
-                    "PhD en Computación", "POO", "Senior"]
+        defaults = ["", "", "", "", "", "", "", ""]
+
         self._entries = {}
         for i, (c, d) in enumerate(zip(campos, defaults)):
             lbl(f, c).grid(row=i, column=0, sticky="w", pady=3)
@@ -581,7 +807,7 @@ class TabDocentes(tk.Frame):
         # Horas
         lbl(f, "Horas a asignar").grid(row=len(campos)+1, column=0, sticky="w", pady=3)
         self._e_horas = entry(f, width=10)
-        self._e_horas.insert(0, "20")
+
         self._e_horas.grid(row=len(campos)+1, column=1, sticky="w", pady=3, padx=8)
 
         btn(f, "➕ Registrar Docente", self._registrar).grid(
@@ -600,15 +826,28 @@ class TabDocentes(tk.Frame):
     def _registrar(self):
         if not self._validar_sistema(): return
         try:
+            valores = {campo: self._entries[campo].get().strip() for campo in self._entries}
+            if not all(valores.values()):
+                messagebox.showwarning("Campos incompletos", "Completa todos los datos del docente.")
+                return
+
+            id_docente = int(valores["ID"])
+            if any(d.id == id_docente for d in estado.docentes):
+                messagebox.showwarning("Duplicado", "Ya existe un docente con ese ID.")
+                return
+            if any(d.correo == valores["Correo"] for d in estado.docentes):
+                messagebox.showwarning("Duplicado", "Ya existe un docente con ese correo.")
+                return
+
             docente = Docente(
-                id=int(self._entries["ID"].get()),
-                nombre=self._entries["Nombre"].get().strip(),
-                correo=self._entries["Correo"].get().strip(),
-                contrasena=self._entries["Contraseña"].get().strip(),
-                telefono=self._entries["Teléfono"].get().strip(),
-                titulo=self._entries["Título"].get().strip(),
-                especialidad=self._entries["Especialidad"].get().strip(),
-                nivel=self._entries["Nivel"].get().strip(),
+                id=id_docente,
+                nombre=valores["Nombre"],
+                correo=valores["Correo"],
+                contrasena=valores["Contraseña"],
+                telefono=valores["Teléfono"],
+                titulo=valores["Título"],
+                especialidad=valores["Especialidad"],
+                nivel=valores["Nivel"],
             )
             estado.gestor.registrar_docente(docente)
 
@@ -662,7 +901,7 @@ class TabEstudiantes(tk.Frame):
         f.pack()
 
         campos = ["ID", "Nombre", "Correo", "Contraseña", "Teléfono"]
-        defaults = ["100", "María García", "mgarcia@est.uleam.edu.ec", "Est1234", "0961234567"]
+        defaults = ["", "", "", "", ""]
         self._entries = {}
         for i, (c, d) in enumerate(zip(campos, defaults)):
             lbl(f, c).grid(row=i, column=0, sticky="w", pady=3)
@@ -695,6 +934,19 @@ class TabEstudiantes(tk.Frame):
     def _registrar(self):
         if not self._validar_sistema(): return
         try:
+            valores = {campo: self._entries[campo].get().strip() for campo in self._entries}
+            if not all(valores.values()):
+                messagebox.showwarning("Campos incompletos", "Completa todos los datos del estudiante.")
+                return
+
+            id_estudiante = int(valores["ID"])
+            if any(e.id == id_estudiante for e in estado.estudiantes):
+                messagebox.showwarning("Duplicado", "Ya existe un estudiante con ese ID.")
+                return
+            if any(e.correo == valores["Correo"] for e in estado.estudiantes):
+                messagebox.showwarning("Duplicado", "Ya existe un estudiante con ese correo.")
+                return
+
             sede_sel = self._cb_sede.get()
             carrera_sel = self._cb_carrera.get()
             sede = next((s for s in estado.sedes if s.nombre_sede == sede_sel), None)
@@ -705,11 +957,11 @@ class TabEstudiantes(tk.Frame):
                 return
 
             est = Estudiante(
-                id=int(self._entries["ID"].get()),
-                nombre=self._entries["Nombre"].get().strip(),
-                correo=self._entries["Correo"].get().strip(),
-                contrasena=self._entries["Contraseña"].get().strip(),
-                telefono=self._entries["Teléfono"].get().strip(),
+                id=id_estudiante,
+                nombre=valores["Nombre"],
+                correo=valores["Correo"],
+                contrasena=valores["Contraseña"],
+                telefono=valores["Teléfono"],
                 fecha_matricula=date.today(),
                 sede=sede,
                 carrera=carrera,
@@ -793,10 +1045,25 @@ class TabAsignaturas(tk.Frame):
     def _registrar(self):
         if not self._validar_sistema(): return
         try:
+            id_asignatura = self._entries["ID"].get().strip()
+            nombre_asignatura = self._entries["Nombre"].get().strip()
+            contenido = self._entries["Contenido"].get().strip()
+
+            if not all([id_asignatura, nombre_asignatura, contenido, self._entries["Créditos"].get().strip()]):
+                messagebox.showwarning("Campos incompletos", "Completa todos los datos de la asignatura.")
+                return
+
+            if any(a.id_asignatura == id_asignatura for a in estado.asignaturas):
+                messagebox.showwarning("Duplicado", "Ya existe una asignatura con ese ID.")
+                return
+            if any(a.nombre == nombre_asignatura for a in estado.asignaturas):
+                messagebox.showwarning("Duplicado", "Ya existe una asignatura con ese nombre.")
+                return
+
             asig = Asignatura(
-                id_asignatura=self._entries["ID"].get().strip(),
-                nombre=self._entries["Nombre"].get().strip(),
-                contenido=self._entries["Contenido"].get().strip(),
+                id_asignatura=id_asignatura,
+                nombre=nombre_asignatura,
+                contenido=contenido,
                 creditos=int(self._entries["Créditos"].get()),
             )
             cupos = int(self._e_cupos.get() or 0)
@@ -815,6 +1082,7 @@ class TabAsignaturas(tk.Frame):
 
             estado.gestor.registrar_asignatura(asig)
             estado.asignaturas.append(asig)
+            guardar_datos()
             self._lista.insert(tk.END, f"  {asig.nombre} — {asig.creditos} créditos")
             messagebox.showinfo("OK", f"Asignatura '{asig.nombre}' registrada.")
         except Exception as ex:
@@ -888,8 +1156,12 @@ class TabParalelos(tk.Frame):
         self._cb_sede = combo(f, [])
         self._cb_sede.grid(row=8, column=1, pady=3, padx=8)
 
+        lbl(f, "Asignatura").grid(row=9, column=0, sticky="w", pady=3)
+        self._cb_asignatura = combo(f, [])
+        self._cb_asignatura.grid(row=9, column=1, pady=3, padx=8)
+
         btn(f, "➕ Crear Paralelo", self._registrar).grid(
-            row=9, column=0, columnspan=2, pady=14
+            row=10, column=0, columnspan=2, pady=14
         )
 
         separador(self)
@@ -904,10 +1176,24 @@ class TabParalelos(tk.Frame):
     def _registrar(self):
         if not self._validar_sistema(): return
         try:
+            codigo = self._e_codigo.get().strip()
+            if not codigo:
+                messagebox.showwarning("Campos incompletos", "Ingresa el código del paralelo.")
+                return
+            if any(p.codigo == codigo for p in estado.paralelos):
+                messagebox.showwarning("Duplicado", "Ya existe un paralelo con ese código.")
+                return
+
             docente_sel = self._cb_docente.get()
             docente = next((d for d in estado.docentes if d.nombre == docente_sel), None)
             if not docente:
                 messagebox.showwarning("Faltan datos", "Selecciona un docente.")
+                return
+
+            asignatura_sel = self._cb_asignatura.get()
+            asignatura = next((a for a in estado.asignaturas if a.nombre == asignatura_sel), None)
+            if not asignatura:
+                messagebox.showwarning("Faltan datos", "Selecciona una asignatura.")
                 return
 
             modalidad = Modalidad(
@@ -924,11 +1210,12 @@ class TabParalelos(tk.Frame):
                 aula=self._e_aula.get(),
             )
             paralelo = Paralelo(
-                codigo=self._e_codigo.get().strip(),
+                codigo=codigo,
                 capacidad=int(self._e_cap.get()),
                 docente=docente,
                 horario=horario,
                 modalidad=modalidad,
+                asignatura=asignatura,
             )
             estado.gestor.registrar_paralelo(paralelo)
 
@@ -940,7 +1227,8 @@ class TabParalelos(tk.Frame):
             estado.paralelos.append(paralelo)
             estado.modalidades.append(modalidad)
             estado.horarios.append(horario)
-            self._lista.insert(tk.END, f"  {paralelo.codigo} — {docente.nombre} | {horario.dia} {horario.hora_inicio}-{horario.hora_fin}")
+            guardar_datos()
+            self._lista.insert(tk.END, f"  {paralelo.codigo} — {asignatura.nombre} | {docente.nombre} | {horario.dia} {horario.hora_inicio}-{horario.hora_fin}")
             messagebox.showinfo("OK", f"Paralelo '{paralelo.codigo}' creado.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
@@ -954,6 +1242,16 @@ class TabParalelos(tk.Frame):
     def refrescar(self):
         self._cb_docente["values"] = [d.nombre for d in estado.docentes]
         self._cb_sede["values"] = [s.nombre_sede for s in estado.sedes]
+        self._cb_asignatura["values"] = [a.nombre for a in estado.asignaturas]
+
+        self._lista.delete(0, tk.END)
+        for paralelo in estado.paralelos:
+            asignatura = paralelo.asignatura.nombre if paralelo.asignatura else "Sin asignatura"
+            horario = paralelo.horario
+            self._lista.insert(
+                tk.END,
+                f"{paralelo.codigo} — {asignatura} | {paralelo.docente.nombre} | {horario.dia} {horario.hora_inicio}-{horario.hora_fin}"
+            )
 
 
 # TAB 7 — MATRÍCULA
@@ -969,7 +1267,7 @@ class TabMatricula(tk.Frame):
         # --- Sección: Matricular en paralelo ---
         f1 = frame(self)
         f1.pack(pady=4)
-        lbl(f1, "📌 Asignar a Paralelo", bold=True).grid(row=0, column=0, columnspan=2, pady=(0,8))
+        lbl(f1, "Asignar a Paralelo", bold=True).grid(row=0, column=0, columnspan=2, pady=(0,8))
 
         lbl(f1, "Estudiante").grid(row=1, column=0, sticky="w", pady=3)
         self._cb_est_par = combo(f1, [])
@@ -1255,6 +1553,18 @@ class TabCalificar(tk.Frame):
                 )
                 return
 
+            matriculado = any(
+                paralelo.asignatura == asignatura and estudiante in paralelo.estudiantes
+                for paralelo in estado.paralelos
+            )
+
+            if not matriculado:
+                messagebox.showwarning(
+                    "Matrícula requerida",
+                    "El estudiante no está matriculado en un paralelo de esta asignatura."
+                )
+                return
+
             estado.gestor.calificar_estudiante(
                 docente,
                 estudiante,
@@ -1262,11 +1572,13 @@ class TabCalificar(tk.Frame):
                 nota,
                 comentario
             )
+            guardar_datos()
 
             messagebox.showinfo(
                 "OK",
                 f"Nota {nota} registrada para '{estudiante.nombre}'."
             )
+            mostrar_texto("Calificaciones", texto_calificaciones(estudiante))
 
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
@@ -1282,7 +1594,7 @@ class TabCalificar(tk.Frame):
             messagebox.showwarning("Faltan datos", "Selecciona un estudiante.")
             return
 
-        est.ver_calificaciones()
+        mostrar_texto("Calificaciones", texto_calificaciones(est))
 
     def _ver_mis_calificaciones(self):
         if not self._validar_sistema():
@@ -1291,7 +1603,7 @@ class TabCalificar(tk.Frame):
         estudiante = estado.usuario_actual
 
         if isinstance(estudiante, Estudiante):
-            estudiante.ver_calificaciones()
+            mostrar_texto("Mis calificaciones", texto_calificaciones(estudiante))
         else:
             messagebox.showwarning("Usuario", "Esta opción solo es para estudiantes.")
 
@@ -1425,7 +1737,8 @@ class TabReportes(tk.Frame):
         estudiante = estado.usuario_actual
 
         if isinstance(estudiante, Estudiante):
-            estado.gestor.generar_reporte_calificaciones(estudiante)
+            reporte = estado.gestor.generar_reporte_calificaciones(estudiante)
+            mostrar_texto("Reporte de calificaciones", reporte.contenido_completo)
         else:
             messagebox.showwarning("Usuario", "Esta opción solo es para estudiantes.")
 
@@ -1436,7 +1749,8 @@ class TabReportes(tk.Frame):
         docente = estado.usuario_actual
 
         if isinstance(docente, Docente):
-            estado.gestor.generar_reporte_docente(docente)
+            reporte = estado.gestor.generar_reporte_docente(docente)
+            mostrar_texto("Reporte de docente", reporte.contenido_completo)
         else:
             messagebox.showwarning("Usuario", "Esta opción solo es para docentes.")
 
@@ -1451,7 +1765,8 @@ class TabReportes(tk.Frame):
             messagebox.showwarning("Faltan datos", "Selecciona un estudiante.")
             return
 
-        estado.gestor.generar_reporte_calificaciones(est)
+        reporte = estado.gestor.generar_reporte_calificaciones(est)
+        mostrar_texto("Reporte de calificaciones", reporte.contenido_completo)
 
     def _rep_docente(self):
         if not self._validar_sistema():
@@ -1464,7 +1779,8 @@ class TabReportes(tk.Frame):
             messagebox.showwarning("Faltan datos", "Selecciona un docente.")
             return
 
-        estado.gestor.generar_reporte_docente(doc)
+        reporte = estado.gestor.generar_reporte_docente(doc)
+        mostrar_texto("Reporte de docente", reporte.contenido_completo)
 
     def _rep_sede(self):
         if not self._validar_sistema():
@@ -1477,7 +1793,8 @@ class TabReportes(tk.Frame):
             messagebox.showwarning("Faltan datos", "Selecciona una sede.")
             return
 
-        estado.gestor.generar_reporte_sede(sede)
+        reporte = estado.gestor.generar_reporte_sede(sede)
+        mostrar_texto("Reporte de sede", reporte.contenido_completo)
 
     def _listar(self):
         if not self._validar_sistema():
@@ -1639,7 +1956,7 @@ class TabResumen(tk.Frame):
         estudiante = estado.usuario_actual
 
         if isinstance(estudiante, Estudiante):
-            estudiante.ver_calificaciones()
+            mostrar_texto("Mis calificaciones", texto_calificaciones(estudiante))
 
     def _reporte_docente(self):
         if not self._validar_sistema():
@@ -1648,7 +1965,8 @@ class TabResumen(tk.Frame):
         docente = estado.usuario_actual
 
         if isinstance(docente, Docente):
-            estado.gestor.generar_reporte_docente(docente)
+            reporte = estado.gestor.generar_reporte_docente(docente)
+            mostrar_texto("Reporte de docente", reporte.contenido_completo)
 
     def _actualizar(self):
         if not hasattr(self, "_cards"):

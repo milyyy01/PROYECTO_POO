@@ -15,6 +15,17 @@
             "capacidad_total": 500
         }
     ],
+    "carreras": [
+        {
+            "id_carrera": 1,
+            "nombre_carrera": "Ingeniería en Sistemas",
+            "facultad": "Ciencias Informáticas",
+            "duracion_semestre": 8,
+            "creditos_totales": 240,
+            "cupos_totales": 40,
+            "sede_id": 1
+        }
+    ],
     "docentes": [
         {
             "id": 10,
@@ -25,7 +36,18 @@
             "especialidad": "POO",
             "nivel": "Senior",
             "horas_asignadas": 0,
-            "sede": null
+            "sede": "Sede Manta"
+        },
+        {
+            "id": 101,
+            "nombre": "Juan Cedeño",
+            "correo": "juan.cede@gmail.com",
+            "telefono": "1234567890",
+            "titulo": "Ing. en Software",
+            "especialidad": "Base de Datos",
+            "nivel": "Senior",
+            "horas_asignadas": 20,
+            "sede": "Sede Manta"
         }
     ],
     "estudiantes": [
@@ -34,11 +56,89 @@
             "nombre": "María García",
             "correo": "mgarcia@est.uleam.edu.ec",
             "telefono": "0961234567",
-            "fecha_matricula": "2026-06-13",
+            "fecha_matricula": "2026-06-14",
             "promedio": 0.0,
             "estado_academico": "Activo",
-            "sede": null,
-            "carrera": null
+            "sede": "Sede Manta",
+            "carrera": "Ingeniería en Sistemas",
+            "calificaciones": {}
+        },
+        {
+            "id": 2,
+            "nombre": "Emily Olmedo",
+            "correo": "emi.olmedo@gmail.com",
+            "telefono": "1234567890",
+            "fecha_matricula": "2026-06-14",
+            "promedio": 9.0,
+            "estado_academico": "Activo",
+            "sede": "Sede Manta",
+            "carrera": "Ingeniería en Sistemas",
+            "calificaciones": {
+                "Base de Datos": 8.5,
+                "Programación OO": 9.5
+            }
+        }
+    ],
+    "asignaturas": [
+        {
+            "id_asignatura": "A001",
+            "nombre": "Programación OO",
+            "contenido": "Clases, herencia, polimorfismo",
+            "creditos": 4,
+            "cupos_maximos": 30,
+            "docente_id": 10,
+            "carrera_id": 1
+        },
+        {
+            "id_asignatura": "A002",
+            "nombre": "Base de Datos",
+            "contenido": "SQL Server",
+            "creditos": 4,
+            "cupos_maximos": 30,
+            "docente_id": 101,
+            "carrera_id": 1
+        }
+    ],
+    "paralelos": [
+        {
+            "codigo": "SIS-A",
+            "capacidad": 30,
+            "docente_id": 10,
+            "asignatura_id": "A001",
+            "sede_id": 1,
+            "modalidad": {
+                "id_modalidad": 1,
+                "tipo": "Presencial",
+                "descripcion": "Modalidad del paralelo",
+                "duracion_horas": 2
+            },
+            "horario": {
+                "id_horario": "H001",
+                "dia": "Lunes",
+                "hora_inicio": "07:00",
+                "hora_fin": "09:00",
+                "aula": "Aula 101"
+            }
+        },
+        {
+            "codigo": "SIS-B",
+            "capacidad": 30,
+            "docente_id": 101,
+            "asignatura_id": "A002",
+            "sede_id": 1,
+            "modalidad": {
+                "id_modalidad": 2,
+                "tipo": "Presencial",
+                "descripcion": "Modalidad del paralelo",
+                "duracion_horas": 2
+            },
+            "horario": {
+                "id_horario": "H002",
+                "dia": "Martes",
+                "hora_inicio": "08:00",
+                "hora_fin": "10:00",
+                "aula": "Aula 102"
+            }
         }
     ]
 }
