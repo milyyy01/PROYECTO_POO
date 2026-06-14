@@ -77,6 +77,15 @@ class Sede:
         if oferta not in self._ofertas:
             self._ofertas.append(oferta)
             print(f"Oferta registrada en sede '{self.nombre_sede}'.")
+    
+    def to_dict(self):
+        return {
+            "id_sede": self.id_sede,
+            "nombre_sede": self.nombre_sede,
+            "direccion": self.direccion,
+            "ciudad": self.ciudad,
+            "capacidad_total": self.capacidad_total
+    }
             
     def __str__(self):
         return (
@@ -85,3 +94,11 @@ class Sede:
             f"Capacidad: {self._capacidad_total} - "
             f"Paralelos: {len(self._paralelos)} - Carreras: {len(self._carreras)}"
         )
+def to_dict(self):
+    return {
+        "id_sede": self.id_sede,
+        "nombre_sede": self.nombre_sede,
+        "direccion": self.direccion,
+        "ciudad": self.ciudad,
+        "capacidad_total": self.capacidad_total
+    }

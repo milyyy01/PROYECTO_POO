@@ -1,0 +1,44 @@
+{
+    "sedes": [
+        {
+            "id_sede": 1,
+            "nombre_sede": "Sede Manta",
+            "direccion": "Av. Universitaria s/n",
+            "ciudad": "Manta",
+            "capacidad_total": 500
+        },
+        {
+            "id_sede": 2,
+            "nombre_sede": "Sede Chone",
+            "direccion": "Av. Chone",
+            "ciudad": "Chone",
+            "capacidad_total": 500
+        }
+    ],
+    "docentes": [
+        {
+            "id": 10,
+            "nombre": "Ana Torres",
+            "correo": "atorres@uleam.edu.ec",
+            "telefono": "0987654321",
+            "titulo": "PhD en Computación",
+            "especialidad": "POO",
+            "nivel": "Senior",
+            "horas_asignadas": 0,
+            "sede": null
+        }
+    ],
+    "estudiantes": [
+        {
+            "id": 100,
+            "nombre": "María García",
+            "correo": "mgarcia@est.uleam.edu.ec",
+            "telefono": "0961234567",
+            "fecha_matricula": "2026-06-13",
+            "promedio": 0.0,
+            "estado_academico": "Activo",
+            "sede": null,
+            "carrera": null
+        }
+    ]
+}

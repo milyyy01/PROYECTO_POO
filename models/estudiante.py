@@ -96,10 +96,33 @@ class Estudiante(Usuario):
         if self.__calificaciones:
             self.__promedio = sum(self.__calificaciones.values()) / len(self.__calificaciones)
            
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre,
+            "correo": self.correo,
+            "telefono": self.telefono,
+            "fecha_matricula": str(self.fecha_matricula),
+            "promedio": self.promedio,
+            "estado_academico": self.estado_academico,
+            "sede": self.sede.nombre_sede if self.sede else None,
+            "carrera": self.carrera.nombre_carrera if self.carrera else None
+    }
+
     def __str__(self):
         sede_nombre = self.sede.nombre_sede if self.sede else "Sin sede"
         carrera_nombre = self.carrera.nombre_carrera if self.carrera else "Sin carrera"
         return (f"[Estudiante] {self.nombre} - Carrera: {carrera_nombre} - "
                 f"Sede: {sede_nombre} - Promedio: {self.__promedio:.2f} - Estado: {self.estado_academico}")
-
+def to_dict(self):
+    return {
+        "id": self.id,
+        "nombre": self.nombre,
+        "correo": self.correo,
+        "telefono": self.telefono,
+        "promedio": self.promedio,
+        "estado_academico": self.estado_academico,
+        "sede": self.sede.nombre_sede if self.sede else None,
+        "carrera": self.carrera.nombre_carrera if self.carrera else None
+    }
     

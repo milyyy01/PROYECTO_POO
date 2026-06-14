@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from models import docente, sede
 from models.usuario import Usuario
 
 if TYPE_CHECKING:
@@ -85,8 +86,8 @@ class Administrador(Usuario):
             
     def asignar_sede_a_docente(self, docente: "Docente", sede: "Sede"):
         docente._establecer_sede(sede)
-        print(f"[Gestión Institucional] Sede '{sede.nombreSede}' asignada exitosamente al docente {docente.nombre}.")
-        self.__registrar_accion(f"Asignó la sede {sede.nombreSede} al docente {docente.nombre}")
+        print(f"[Gestión Institucional] Sede '{sede.nombre_sede}' asignada exitosamente al docente {docente.nombre}.")
+        self.__registrar_accion(f"Asignó la sede {sede.nombre_sede} al docente {docente.nombre}")
         
 # Métodos internos:
 
