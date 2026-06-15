@@ -58,6 +58,7 @@ class EstadoSistema:
     def __init__(self):
         self.gestor: GestorNivelacion = None
         self.admin: Administrador = None
+        self.admins: list = []
         self.usuario_actual = None
         self.sedes: list = []
         self.carreras: list = []
@@ -308,25 +309,40 @@ def cargar_datos():
         print("No existe datos.json todavía.")
 
 def iniciar_sistema_automatico():
-    if estado.admin is None:
-        estado.admin = Administrador(
-            id=1,
-            nombre="ADONIS SOLORZANO",
-            correo="ADONIS@uleam.edu.ec",
-            contrasena="Admin123",
-            telefono="0991234567",
-            nivel_autoridad="Alto",
-            departamento_asignado="Nivelación"
+    admins_defecto = [
+        {
+            "id": 1,
+            "nombre": "ADONIS SOLORZANO",
+            "correo": "ADONIS@uleam.edu.ec",
+            "contrasena": "Admin123",
+            "telefono": "0991234567",
+            "nivel_autoridad": "Alto",
+            "departamento_asignado": "Nivelación"
+        },
+        {
+            "id": 2,
+            "nombre": "Anthony Salazar",
+            "correo": "anthonysalazar006@gmail.com",
+            "contrasena": "Admin123",
+            "telefono": "0991234567",
+            "nivel_autoridad": "Alto",
+            "departamento_asignado": "Nivelación"
+        }
+    ]
+
+    for datos_admin in admins_defecto:
+        correo_admin = datos_admin["correo"].strip().lower()
+
+        existe = any(
+            admin.correo.strip().lower() == correo_admin
+            for admin in estado.admins
         )
-        estado.admin = Administrador(
-            id=2,
-            nombre="Anthony Salazar",
-            correo="anthonysalazar006@gmail.com",
-            contrasena="Admin123",
-            telefono="0991234567",
-            nivel_autoridad="Alto",
-            departamento_asignado="Nivelación"
-        )
+
+        if not existe:
+            estado.admins.append(Administrador(**datos_admin))
+
+    if estado.admin is None and estado.admins:
+        estado.admin = estado.admins[0]
 
     if estado.gestor is None:
         estado.gestor = GestorNivelacion(
@@ -350,20 +366,20 @@ def iniciar_sistema_automatico():
         estado.gestor.registrar_paralelo(paralelo)
 
 def iniciar_sesion(correo, contrasena):
-    correo = correo.strip()
+    correo = correo.strip().lower()
 
-    if estado.admin:
-        if estado.admin.correo == correo:
-            estado.usuario_actual = estado.admin
-            return estado.admin
+    for admin in estado.admins:
+        if admin.correo.strip().lower() == correo:
+            estado.usuario_actual = admin
+            return admin
 
     for docente in estado.docentes:
-        if docente.correo == correo:
+        if docente.correo.strip().lower() == correo:
             estado.usuario_actual = docente
             return docente
 
     for estudiante in estado.estudiantes:
-        if estudiante.correo == correo:
+        if estudiante.correo.strip().lower() == correo:
             estado.usuario_actual = estudiante
             return estudiante
 
@@ -743,7 +759,6 @@ class AppSIGEN(tk.Tk):
             nb.add(self.tab_asignaturas, text="Asignaturas")
             nb.add(self.tab_paralelos,   text="Paralelos")
             nb.add(self.tab_matricula,   text="Matrícula")
-            nb.add(self.tab_calificar,   text="Calificar")
             nb.add(self.tab_reportes,    text="Reportes")
             nb.add(self.tab_resumen,     text="Resumen")
 
