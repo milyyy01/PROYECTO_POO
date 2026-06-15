@@ -4,11 +4,12 @@ Ejecutar desde la raíz del proyecto: python app_gui.py
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
+from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import date
 from io import StringIO
 import sys
 import json
+import csv
 
 # Modelos:
 from models import usuario
@@ -367,6 +368,137 @@ def iniciar_sesion(correo, contrasena):
             return estudiante
 
     return None
+
+def importar_docentes_csv(ruta_archivo):
+    importados = 0
+    errores = []
+
+    try:
+        with open(ruta_archivo, "r", encoding="utf-8-sig", newline="") as archivo:
+            lector = csv.DictReader(archivo)
+
+            for fila_num, fila in enumerate(lector, start=2):
+                try:
+                    id_docente = int(fila.get("id", "").strip())
+                    nombre = fila.get("nombre", "").strip()
+                    correo = fila.get("correo", "").strip()
+                    contrasena = fila.get("contrasena", "").strip()
+                    telefono = fila.get("telefono", "").strip()
+                    titulo = fila.get("titulo", "").strip()
+                    especialidad = fila.get("especialidad", "").strip()
+                    nivel = fila.get("nivel", "").strip()
+                    sede_nombre = fila.get("sede", "").strip()
+                    horas = int(fila.get("horas", "0") or 0)
+
+                    if not all([nombre, correo, contrasena, telefono, titulo, especialidad, nivel]):
+                        errores.append(f"Fila {fila_num}: campos incompletos.")
+                        continue
+
+                    if any(d.id == id_docente for d in estado.docentes):
+                        errores.append(f"Fila {fila_num}: ya existe un docente con ID {id_docente}.")
+                        continue
+
+                    if any(d.correo == correo for d in estado.docentes):
+                        errores.append(f"Fila {fila_num}: ya existe un docente con correo {correo}.")
+                        continue
+
+                    docente = Docente(
+                        id=id_docente,
+                        nombre=nombre,
+                        correo=correo,
+                        contrasena=contrasena,
+                        telefono=telefono,
+                        titulo=titulo,
+                        especialidad=especialidad,
+                        nivel=nivel,
+                    )
+
+                    estado.gestor.registrar_docente(docente)
+
+                    sede = next((s for s in estado.sedes if s.nombre_sede == sede_nombre), None)
+                    if sede:
+                        estado.gestor.asignar_sede_a_docente(docente, sede)
+
+                    if horas > 0:
+                        estado.gestor.asignar_carga_horaria(docente, horas)
+
+                    estado.docentes.append(docente)
+                    importados += 1
+
+                except Exception as ex:
+                    errores.append(f"Fila {fila_num}: {ex}")
+
+        guardar_datos()
+        return importados, errores
+
+    except Exception as ex:
+        return 0, [str(ex)]
+
+
+def importar_estudiantes_csv(ruta_archivo):
+    importados = 0
+    errores = []
+
+    try:
+        with open(ruta_archivo, "r", encoding="utf-8-sig", newline="") as archivo:
+            lector = csv.DictReader(archivo)
+
+            for fila_num, fila in enumerate(lector, start=2):
+                try:
+                    id_estudiante = int(fila.get("id", "").strip())
+                    nombre = fila.get("nombre", "").strip()
+                    correo = fila.get("correo", "").strip()
+                    contrasena = fila.get("contrasena", "").strip()
+                    telefono = fila.get("telefono", "").strip()
+                    sede_nombre = fila.get("sede", "").strip()
+                    carrera_nombre = fila.get("carrera", "").strip()
+
+                    if not all([nombre, correo, contrasena, telefono, sede_nombre, carrera_nombre]):
+                        errores.append(f"Fila {fila_num}: campos incompletos.")
+                        continue
+
+                    if any(e.id == id_estudiante for e in estado.estudiantes):
+                        errores.append(f"Fila {fila_num}: ya existe un estudiante con ID {id_estudiante}.")
+                        continue
+
+                    if any(e.correo == correo for e in estado.estudiantes):
+                        errores.append(f"Fila {fila_num}: ya existe un estudiante con correo {correo}.")
+                        continue
+
+                    sede = next((s for s in estado.sedes if s.nombre_sede == sede_nombre), None)
+                    carrera = next((c for c in estado.carreras if c.nombre_carrera == carrera_nombre), None)
+
+                    if not sede:
+                        errores.append(f"Fila {fila_num}: no existe la sede '{sede_nombre}'.")
+                        continue
+
+                    if not carrera:
+                        errores.append(f"Fila {fila_num}: no existe la carrera '{carrera_nombre}'.")
+                        continue
+
+                    estudiante = Estudiante(
+                        id=id_estudiante,
+                        nombre=nombre,
+                        correo=correo,
+                        contrasena=contrasena,
+                        telefono=telefono,
+                        fecha_matricula=date.today(),
+                        sede=sede,
+                        carrera=carrera,
+                    )
+
+                    estado.gestor.registrar_estudiante(estudiante)
+                    estado.estudiantes.append(estudiante)
+                    importados += 1
+
+                except Exception as ex:
+                    errores.append(f"Fila {fila_num}: {ex}")
+
+        guardar_datos()
+        return importados, errores
+
+    except Exception as ex:
+        return 0, [str(ex)]
 
 # HELPERS UI
 
@@ -831,6 +963,13 @@ class TabDocentes(tk.Frame):
             row=len(campos)+2, column=0, columnspan=2, pady=14
         )
 
+        btn(
+            f,
+            "Importar docentes CSV",
+            self._importar_csv,
+            color=COLORS["warning"]
+        ).grid(row=len(campos)+3, column=0, columnspan=2, pady=6)
+
         separador(self)
         lbl(self, "Docentes registrados", bold=True).pack()
         self._lista = tk.Listbox(
@@ -886,6 +1025,28 @@ class TabDocentes(tk.Frame):
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
 
+    def _importar_csv(self):
+        if not self._validar_sistema():
+            return
+
+        ruta = filedialog.askopenfilename(
+        title="Seleccionar archivo CSV de docentes",
+        filetypes=[("Archivos CSV", "*.csv")]
+    )
+
+        if not ruta:
+            return
+
+        importados, errores = importar_docentes_csv(ruta)
+        self.refrescar()
+
+        mensaje = f"Docentes importados: {importados}"
+
+        if errores:
+            mensaje += "\n\nErrores:\n" + "\n".join(errores[:10])
+
+        messagebox.showinfo("Importación CSV", mensaje)
+
     def _validar_sistema(self):
         if not estado.gestor:
             messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
@@ -939,6 +1100,13 @@ class TabEstudiantes(tk.Frame):
             row=7, column=0, columnspan=2, pady=14
         )
 
+        btn(
+            f,
+            "Importar estudiantes CSV",
+            self._importar_csv,
+            color=COLORS["warning"]
+        ).grid(row=8, column=0, columnspan=2, pady=6)
+
         separador(self)
         lbl(self, "Estudiantes registrados", bold=True).pack()
         self._lista = tk.Listbox(
@@ -990,6 +1158,28 @@ class TabEstudiantes(tk.Frame):
             messagebox.showinfo("OK", f"Estudiante '{est.nombre}' registrado.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
+
+    def _importar_csv(self):
+        if not self._validar_sistema():
+            return
+
+        ruta = filedialog.askopenfilename(
+            title="Seleccionar archivo CSV de estudiantes",
+            filetypes=[("Archivos CSV", "*.csv")]
+        )
+
+        if not ruta:
+            return
+
+        importados, errores = importar_estudiantes_csv(ruta)
+        self.refrescar()
+
+        mensaje = f"Estudiantes importados: {importados}"
+
+        if errores:
+            mensaje += "\n\nErrores:\n" + "\n".join(errores[:10])
+
+        messagebox.showinfo("Importación CSV", mensaje)
 
     def _validar_sistema(self):
         if not estado.gestor:

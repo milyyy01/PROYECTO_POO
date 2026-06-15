@@ -48,6 +48,28 @@
             "nivel": "Senior",
             "horas_asignadas": 20,
             "sede": "Sede Manta"
+        },
+        {
+            "id": 20,
+            "nombre": "Juan Perez",
+            "correo": "jperez@uleam.edu.ec",
+            "telefono": "0981111111",
+            "titulo": "Magister en Software",
+            "especialidad": "Bases de Datos",
+            "nivel": "Senior",
+            "horas_asignadas": 12,
+            "sede": "Sede Manta"
+        },
+        {
+            "id": 21,
+            "nombre": "Laura Zambrano",
+            "correo": "lzambrano@uleam.edu.ec",
+            "telefono": "0982222222",
+            "titulo": "Ingeniera en Sistemas",
+            "especialidad": "Programacion",
+            "nivel": "Junior",
+            "horas_asignadas": 10,
+            "sede": "Sede Manta"
         }
     ],
     "estudiantes": [
@@ -56,7 +78,7 @@
             "nombre": "María García",
             "correo": "mgarcia@est.uleam.edu.ec",
             "telefono": "0961234567",
-            "fecha_matricula": "2026-06-14",
+            "fecha_matricula": "2026-06-15",
             "promedio": 0.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -68,7 +90,7 @@
             "nombre": "Emily Olmedo",
             "correo": "emi.olmedo@gmail.com",
             "telefono": "1234567890",
-            "fecha_matricula": "2026-06-14",
+            "fecha_matricula": "2026-06-15",
             "promedio": 9.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -77,6 +99,30 @@
                 "Base de Datos": 8.5,
                 "Programación OO": 9.5
             }
+        },
+        {
+            "id": 200,
+            "nombre": "Carlos Lopez",
+            "correo": "clopez@est.uleam.edu.ec",
+            "telefono": "0961111111",
+            "fecha_matricula": "2026-06-15",
+            "promedio": 0.0,
+            "estado_academico": "Activo",
+            "sede": "Sede Manta",
+            "carrera": "Ingeniería en Sistemas",
+            "calificaciones": {}
+        },
+        {
+            "id": 201,
+            "nombre": "Diana Vera",
+            "correo": "dvera@est.uleam.edu.ec",
+            "telefono": "0962222222",
+            "fecha_matricula": "2026-06-15",
+            "promedio": 0.0,
+            "estado_academico": "Activo",
+            "sede": "Sede Manta",
+            "carrera": "Ingeniería en Sistemas",
+            "calificaciones": {}
         }
     ],
     "asignaturas": [

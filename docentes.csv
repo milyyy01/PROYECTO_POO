@@ -1,0 +1,3 @@
+id,nombre,correo,contrasena,telefono,titulo,especialidad,nivel,sede,horas
+20,Juan Perez,jperez@uleam.edu.ec,Docente123,0981111111,Magister en Software,Bases de Datos,Senior,Sede Manta,12
+21,Laura Zambrano,lzambrano@uleam.edu.ec,Docente123,0982222222,Ingeniera en Sistemas,Programacion,Junior,Sede Manta,10
