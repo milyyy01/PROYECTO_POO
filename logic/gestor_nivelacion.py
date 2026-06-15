@@ -1,9 +1,3 @@
-"""
-gestor_nivelacion.py
-Sistema funcional SIGEN - Gestión de Nivelación
-Principios SOLID aplicados + Patrón Builder
-"""
-
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import date
