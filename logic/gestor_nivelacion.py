@@ -5,6 +5,9 @@ from typing import List, Optional
 
 # IMPORTACIONES DEL DOMINIO
 
+from models import estudiante
+from models import docente
+from models import sede
 from models.usuario import Usuario
 from models.estudiante import Estudiante
 from models.docente import Docente
@@ -23,6 +26,10 @@ from models.Reporte import (
     ReporteAcademicoBuilder,
     DirectorReportes,
 )
+
+from reports.reporte_calificaciones import obtener_datos_calificaciones
+from reports.reporte_docente import obtener_datos_docente
+from reports.reporte_sede import obtener_datos_sede
 
 
 # I — INTERFACES ESPECÍFICAS (Interface Segregation)
@@ -374,13 +381,7 @@ class GestorReportes(IGestorReportes):
 
     def generar_reporte_calificaciones(self, estudiante: Estudiante) -> Reporte:
         """Usa el builder académico para calificaciones del estudiante."""
-        datos = []
-        for materia, nota in estudiante.ver_calificaciones().items():
-            estado = "Aprobado" if nota >= 7.0 else "Reprobado"
-            datos.append(f"{materia}: {nota:.2f} -> {estado}")
-        if not datos:
-            datos = ["Sin calificaciones registradas."]
-        datos.append(f"Promedio general: {estudiante.promedio:.2f}")
+        datos = obtener_datos_calificaciones(estudiante)
 
         return self._construir(
             builder=ReporteAcademicoBuilder(),
@@ -392,15 +393,8 @@ class GestorReportes(IGestorReportes):
 
     def generar_reporte_docente(self, docente: Docente) -> Reporte:
         """Usa el builder de docente."""
-        datos = [
-            f"Título       : {docente.titulo}",
-            f"Especialidad : {docente.especialidad}",
-            f"Nivel        : {docente.nivel}",
-            f"Horas asign. : {docente.horas_asignadas}",
-            f"Sede         : {docente.sede.nombre_sede if docente.sede else 'Sin sede'}",
-            f"Materias     : {len(docente.materias_asignadas)}",
-            f"Paralelos    : {len(docente.paralelos)}",
-        ]
+        datos = obtener_datos_docente(docente)
+
         return self._construir(
             builder=ReporteDocenteBuilder(),
             tipo="Docente - Perfil",
@@ -411,13 +405,8 @@ class GestorReportes(IGestorReportes):
 
     def generar_reporte_sede(self, sede: Sede) -> Reporte:
         """Usa el builder de sede."""
-        datos = [
-            f"Ciudad       : {sede.ciudad}",
-            f"Dirección    : {sede.direccion}",
-            f"Capacidad    : {sede.capacidad_total}",
-            f"Paralelos    : {len(sede._paralelos)}",
-            f"Carreras     : {len(sede._carreras)}",
-        ]
+        datos = obtener_datos_sede(sede)
+
         return self._construir(
             builder=ReporteSedeBuilder(),
             tipo="Sede - Resumen",
