@@ -317,6 +317,15 @@ def iniciar_sistema_automatico():
             nivel_autoridad="Alto",
             departamento_asignado="Nivelación"
         )
+        estado.admin = Administrador(
+            id=2,
+            nombre="Anthony Salazar",
+            correo="anthonysalazar006@gmail.com",
+            contrasena="Admin123",
+            telefono="0991234567",
+            nivel_autoridad="Alto",
+            departamento_asignado="Nivelación"
+        )
 
     if estado.gestor is None:
         estado.gestor = GestorNivelacion(
@@ -643,6 +652,14 @@ class TabInicio(tk.Frame):
         campos = [
             ("Nombre", "ADONIS SOLORZANO"),
             ("Correo", "ADONIS@uleam.edu.ec"),
+            ("Contraseña", "Admin123"),
+            ("Teléfono", "0991234567"),
+            ("Nivel de autoridad", "Alto"),
+            ("Departamento", "Nivelación"),
+        ]
+        campos = [
+            ("Nombre", "Anthony Salazar"),
+            ("Correo", "anthonysalazar006@gmail.com"),
             ("Contraseña", "Admin123"),
             ("Teléfono", "0991234567"),
             ("Nivel de autoridad", "Alto"),
