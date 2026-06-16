@@ -366,22 +366,29 @@ def iniciar_sistema_automatico():
         estado.gestor.registrar_paralelo(paralelo)
 
 def iniciar_sesion(correo, contrasena):
-    correo = correo.strip().lower()
+    correo_ingresado = correo.strip().lower()
+    contrasena = contrasena.strip()
+
+    if not correo_ingresado or not contrasena:
+        return None
 
     for admin in estado.admins:
-        if admin.correo.strip().lower() == correo:
-            estado.usuario_actual = admin
-            return admin
+        if admin.correo.strip().lower() == correo_ingresado:
+            if admin.iniciar_sesion(admin.correo, contrasena):
+                estado.usuario_actual = admin
+                return admin
 
     for docente in estado.docentes:
-        if docente.correo.strip().lower() == correo:
-            estado.usuario_actual = docente
-            return docente
+        if docente.correo.strip().lower() == correo_ingresado:
+            if docente.iniciar_sesion(docente.correo, contrasena):
+                estado.usuario_actual = docente
+                return docente
 
     for estudiante in estado.estudiantes:
-        if estudiante.correo.strip().lower() == correo:
-            estado.usuario_actual = estudiante
-            return estudiante
+        if estudiante.correo.strip().lower() == correo_ingresado:
+            if estudiante.iniciar_sesion(estudiante.correo, contrasena):
+                estado.usuario_actual = estudiante
+                return estudiante
 
     return None
 
@@ -617,33 +624,131 @@ class LoginWindow(tk.Tk):
         super().__init__()
 
         self.title("Login SIGEN")
-        self.geometry("400x250")
+        self.configure(bg=COLORS["bg"])
+        self.state("zoomed")
 
-        tk.Label(self, text="Correo").pack(pady=10)
+        self._construir()
 
-        self.correo = tk.Entry(self, width=35)
-        self.correo.pack()
+    def _centrar_ventana(self):
+        self.update_idletasks()
+        ancho = 520
+        alto = 420
+        x = (self.winfo_screenwidth() // 2) - (ancho // 2)
+        y = (self.winfo_screenheight() // 2) - (alto // 2)
+        self.geometry(f"{ancho}x{alto}+{x}+{y}")
 
-        tk.Label(self, text="Contraseña").pack(pady=10)
+    def _construir(self):
+        header = tk.Frame(self, bg=COLORS["accent"], height=90)
+        header.pack(fill="x")
 
-        self.password = tk.Entry(self, width=35, show="*")
-        self.password.pack()
+        tk.Label(
+            header,
+            text="SIGEN",
+            font=("Segoe UI", 24, "bold"),
+            bg=COLORS["accent"],
+            fg="white"
+        ).pack(pady=(18, 0))
+
+        tk.Label(
+            header,
+            text="Sistema de Gestión de Nivelación",
+            font=("Segoe UI", 10),
+            bg=COLORS["accent"],
+            fg="white"
+        ).pack()
+
+        contenedor = tk.Frame(self, bg=COLORS["bg"])
+        contenedor.pack(fill="both", expand=True)
+
+        card = tk.Frame(
+            contenedor,
+            bg=COLORS["surface"],
+            padx=35,
+            pady=28
+        )
+        card.pack(expand=True)
+
+        tk.Label(
+            card,
+            text="Iniciar sesión",
+            font=("Segoe UI", 16, "bold"),
+            bg=COLORS["surface"],
+            fg=COLORS["text"]
+        ).grid(row=0, column=0, columnspan=2, pady=(0, 18))
+
+        tk.Label(
+            card,
+            text="Correo",
+            font=("Segoe UI", 10, "bold"),
+            bg=COLORS["surface"],
+            fg=COLORS["text"]
+        ).grid(row=1, column=0, sticky="w", pady=6)
+
+        self.correo = tk.Entry(
+            card,
+            width=32,
+            font=("Segoe UI", 10),
+            bg=COLORS["bg"],
+            fg=COLORS["text"],
+            insertbackground=COLORS["text"],
+            relief="flat",
+            bd=6
+        )
+        self.correo.grid(row=2, column=0, columnspan=2, pady=(0, 12))
+
+        tk.Label(
+            card,
+            text="Contraseña",
+            font=("Segoe UI", 10, "bold"),
+            bg=COLORS["surface"],
+            fg=COLORS["text"]
+        ).grid(row=3, column=0, sticky="w", pady=6)
+
+        self.password = tk.Entry(
+            card,
+            width=32,
+            show="*",
+            font=("Segoe UI", 10),
+            bg=COLORS["bg"],
+            fg=COLORS["text"],
+            insertbackground=COLORS["text"],
+            relief="flat",
+            bd=6
+        )
+        self.password.grid(row=4, column=0, columnspan=2, pady=(0, 18))
 
         tk.Button(
-            self,
-            text="Iniciar Sesión",
-            command=self.login
-        ).pack(pady=20)
+            card,
+            text="Iniciar sesión",
+            command=self.login,
+            font=("Segoe UI", 10, "bold"),
+            bg=COLORS["success"],
+            fg="white",
+            activebackground=COLORS["accent2"],
+            activeforeground="white",
+            relief="flat",
+            padx=22,
+            pady=8,
+            cursor="hand2"
+        ).grid(row=5, column=0, columnspan=2, pady=(4, 12))
+
+        tk.Label(
+            card,
+            text="Acceso para administradores, docentes y estudiantes",
+            font=("Segoe UI", 8),
+            bg=COLORS["surface"],
+            fg=COLORS["text2"]
+        ).grid(row=6, column=0, columnspan=2)
+
+        self.bind("<Return>", lambda event: self.login())
 
     def login(self):
-
         usuario = iniciar_sesion(
             self.correo.get(),
             self.password.get()
         )
 
         if usuario:
-
             messagebox.showinfo(
                 "Bienvenido",
                 f"Hola {usuario.nombre}"
@@ -657,29 +762,86 @@ class LoginWindow(tk.Tk):
         else:
             messagebox.showerror(
                 "Error",
-                "Usuario no encontrado"
+                "Correo o contraseña incorrectos"
             )
-
 class AppSIGEN(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("SIGEN — Sistema de Gestión de Nivelación")
-        self.geometry("1100x720")
-        self.resizable(True, True)
         self.configure(bg=COLORS["bg"])
+        self.state("zoomed")
 
         self._construir_ui()
+    
+    def _cerrar_sesion(self):
+        confirmar = messagebox.askyesno(
+            "Cerrar sesión",
+            "¿Deseas cerrar la sesión actual?"
+        )
+
+        if not confirmar:
+            return
+
+        try:
+            self._stdout_gui.desactivar()
+        except Exception:
+            pass
+
+        estado.usuario_actual = None
+        self.destroy()
+
+        login = LoginWindow()
+        login.mainloop()
 
     def _construir_ui(self):
         # Header:
         header = tk.Frame(self, bg=COLORS["accent"], pady=10)
         header.pack(fill="x")
+
+        header.grid_columnconfigure(0, weight=1)
+        header.grid_columnconfigure(1, weight=3)
+        header.grid_columnconfigure(2, weight=1)
+
+        usuario = estado.usuario_actual
+        nombre_usuario = usuario.nombre if usuario else "Invitado"
+
+        if isinstance(usuario, Docente):
+            rol = "Docente"
+        elif isinstance(usuario, Estudiante):
+            rol = "Estudiante"
+        else:
+            rol = "Administrador"
+
         tk.Label(
             header,
-            text="🎓  SIGEN — Universidad Laica Eloy Alfaro de Manabí",
+            text=f"Usuario: {nombre_usuario} | Rol: {rol}",
+            font=("Segoe UI", 9, "bold"),
+            bg=COLORS["accent"],
+            fg="white",
+        ).grid(row=0, column=0, sticky="w", padx=16)
+
+        tk.Label(
+            header,
+            text="SIGEN — Universidad Laica Eloy Alfaro de Manabí",
             font=("Segoe UI", 14, "bold"),
-            bg=COLORS["accent"], fg="white",
-        ).pack()
+            bg=COLORS["accent"],
+            fg="white",
+        ).grid(row=0, column=1)
+
+        tk.Button(
+            header,
+            text="Cerrar sesión",
+            command=self._cerrar_sesion,
+            font=("Segoe UI", 9, "bold"),
+            bg=COLORS["error"],
+            fg="white",
+            activebackground="#b91c1c",
+            activeforeground="white",
+            relief="flat",
+            padx=12,
+            pady=5,
+            cursor="hand2",
+        ).grid(row=0, column=2, sticky="e", padx=16)
 
         # Body:
         body = tk.Frame(self, bg=COLORS["bg"])
