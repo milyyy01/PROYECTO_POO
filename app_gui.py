@@ -13,6 +13,7 @@ import csv
 
 # Modelos:
 from models import usuario
+from models import docente
 from models.administrador import Administrador
 from models.estudiante import Estudiante
 from models.docente import Docente
@@ -866,6 +867,31 @@ class AppSIGEN(tk.Tk):
             foreground=[("selected", "white")],
         )
 
+        # Estilo para tablas
+        style.configure(
+            "TablaSIGEN.Treeview",
+            background=COLORS["bg"],
+            foreground=COLORS["text"],
+            fieldbackground=COLORS["bg"],
+            rowheight=30,
+            font=("Segoe UI", 10),
+            borderwidth=0
+        )
+
+        style.configure(
+            "TablaSIGEN.Treeview.Heading",
+            background=COLORS["accent"],
+            foreground="white",
+            font=("Segoe UI", 10, "bold"),
+            padding=8
+        )
+
+        style.map(
+            "TablaSIGEN.Treeview",
+            background=[("selected", COLORS["accent"])],
+            foreground=[("selected", "white")]
+        )
+
         nb = ttk.Notebook(body)
         nb.pack(fill="both", expand=True)
 
@@ -1219,12 +1245,43 @@ class TabDocentes(tk.Frame):
 
         separador(self)
         lbl(self, "Docentes registrados", bold=True).pack()
-        self._lista = tk.Listbox(
-            self, bg=COLORS["bg"], fg=COLORS["text"],
-            font=("Segoe UI", 10), height=6, relief="flat",
-            selectbackground=COLORS["accent"],
+
+        columnas = ("id", "nombre", "correo", "especialidad", "sede", "horas")
+
+        self._tabla = ttk.Treeview(
+            self,
+            columns=columnas,
+            show="headings",
+            height=7,
+            style="TablaSIGEN.Treeview"
         )
-        self._lista.pack(fill="x", padx=20, pady=6)
+
+        self._tabla.heading("id", text="ID")
+        self._tabla.heading("nombre", text="Nombre")
+        self._tabla.heading("correo", text="Correo")
+        self._tabla.heading("especialidad", text="Especialidad")
+        self._tabla.heading("sede", text="Sede")
+        self._tabla.heading("horas", text="Horas")
+
+        self._tabla.column("id", width=60, anchor="center")
+        self._tabla.column("nombre", width=180)
+        self._tabla.column("correo", width=220)
+        self._tabla.column("especialidad", width=180)
+        self._tabla.column("sede", width=160)
+        self._tabla.column("horas", width=80, anchor="center")
+
+        self._tabla.pack(fill="x", padx=20, pady=6)
+        self._tabla.tag_configure(
+            "fila_par",
+            background=COLORS["bg"],
+            foreground=COLORS["text"]
+        )
+
+        self._tabla.tag_configure(
+            "fila_impar",
+            background=COLORS["surface"],
+            foreground=COLORS["text"]
+        )
 
     def _registrar(self):
         if not self._validar_sistema(): return
@@ -1267,7 +1324,7 @@ class TabDocentes(tk.Frame):
 
             estado.docentes.append(docente)
             guardar_datos()
-            self._lista.insert(tk.END, f"  {docente.nombre} — {docente.especialidad}")
+            self.refrescar()
             messagebox.showinfo("OK", f"Docente '{docente.nombre}' registrado.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
@@ -1303,13 +1360,28 @@ class TabDocentes(tk.Frame):
     def refrescar(self):
         self._cb_sede["values"] = [s.nombre_sede for s in estado.sedes]
 
-        self._lista.delete(0, tk.END)
+        for item in self._tabla.get_children():
+            self._tabla.delete(item)
 
-        for docente in estado.docentes:
-            self._lista.insert(
-            tk.END,
-            f"{docente.nombre} — {docente.especialidad}"
-        )
+        for i, docente in enumerate(estado.docentes):
+            sede = docente.sede.nombre_sede if docente.sede else "Sin sede"
+            horas = docente.horas_asignadas
+
+            etiqueta = "fila_par" if i % 2 == 0 else "fila_impar"
+
+            self._tabla.insert(
+                "",
+                tk.END,
+                values=(
+                    docente.id,
+                    docente.nombre,
+                    docente.correo,
+                    docente.especialidad,
+                    sede,
+                    horas
+                ),
+                tags=(etiqueta,)
+            )
 
 
 # TAB 4 — ESTUDIANTES
