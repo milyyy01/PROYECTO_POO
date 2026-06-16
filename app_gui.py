@@ -939,85 +939,155 @@ class TabInicio(tk.Frame):
     def __init__(self, parent, app: AppSIGEN):
         super().__init__(parent, bg=COLORS["bg"])
         self._app = app
+        self._cards = {}
+        self._lbl_usuario = None
         self._construir()
 
     def _construir(self):
-        contenedor = frame(self, padx=40, pady=30)
-        contenedor.pack(expand=True)
-
-        lbl(contenedor, "Configuración inicial del sistema", bold=True, size=13).grid(
-            row=0, column=0, columnspan=2, pady=(0, 20)
+        contenedor = tk.Frame(
+            self,
+            bg=COLORS["surface"],
+            padx=35,
+            pady=30
         )
-        lbl(contenedor, "Nombre de la institución").grid(row=1, column=0, sticky="w", pady=4)
-        self.e_institucion = entry(contenedor, width=35)
-        self.e_institucion.insert(0, "ULEAM - Campus Manta")
-        self.e_institucion.grid(row=1, column=1, pady=4, padx=8)
+        contenedor.pack(fill="both", expand=True, padx=25, pady=25)
 
-        separador(contenedor, row=2)
-        lbl(contenedor, "Datos del Administrador", bold=True, size=11).grid(
-            row=3, column=0, columnspan=2, pady=(8, 4)
+        # Encabezado del dashboard
+        tk.Label(
+            contenedor,
+            text="Panel principal SIGEN",
+            font=("Segoe UI", 22, "bold"),
+            bg=COLORS["surface"],
+            fg=COLORS["text"]
+        ).pack(anchor="w")
+
+        tk.Label(
+            contenedor,
+            text="Resumen general del Sistema de Gestión de Nivelación",
+            font=("Segoe UI", 11),
+            bg=COLORS["surface"],
+            fg=COLORS["text2"]
+        ).pack(anchor="w", pady=(4, 18))
+
+        usuario = estado.usuario_actual
+        nombre_usuario = usuario.nombre if usuario else "Invitado"
+
+        if isinstance(usuario, Docente):
+            rol = "Docente"
+        elif isinstance(usuario, Estudiante):
+            rol = "Estudiante"
+        else:
+            rol = "Administrador"
+
+        self._lbl_usuario = tk.Label(
+            contenedor,
+            text=f"Usuario actual: {nombre_usuario} | Rol: {rol}",
+            font=("Segoe UI", 11, "bold"),
+            bg=COLORS["surface"],
+            fg=COLORS["success"]
+        )
+        self._lbl_usuario.pack(anchor="w", pady=(0, 18))
+        estado_frame = tk.Frame(
+    contenedor,
+    bg=COLORS["bg"],
+    padx=18,
+    pady=10
+)
+        estado_frame.pack(fill="x", pady=(0, 18))
+
+        self._lbl_estado = tk.Label(
+            estado_frame,
+            text="",
+            font=("Segoe UI", 10),
+            bg=COLORS["bg"],
+            fg=COLORS["text2"],
+            justify="left",
+            anchor="w"
+        )
+        self._lbl_estado.pack(fill="x")
+
+        # Contenedor de tarjetas
+        tablero = tk.Frame(contenedor, bg=COLORS["surface"])
+        tablero.pack(fill="x", pady=10)
+
+        for i in range(3):
+            tablero.grid_columnconfigure(i, weight=1)
+
+        self._crear_card(tablero, "Estudiantes", "0", 0, 0)
+        self._crear_card(tablero, "Docentes", "0", 0, 1)
+        self._crear_card(tablero, "Asignaturas", "0", 0, 2)
+
+        self._crear_card(tablero, "Paralelos", "0", 1, 0)
+        self._crear_card(tablero, "Sedes", "0", 1, 1)
+        self._crear_card(tablero, "Carreras", "0", 1, 2)
+
+        tk.Button(
+            contenedor,
+            text="Actualizar dashboard",
+            command=self.refrescar,
+            font=("Segoe UI", 10, "bold"),
+            bg=COLORS["accent"],
+            fg="white",
+            activebackground=COLORS["accent2"],
+            activeforeground="white",
+            relief="flat",
+            padx=18,
+            pady=8,
+            cursor="hand2"
+        ).pack(anchor="e", pady=10)
+
+        self.refrescar()
+
+    def _crear_card(self, parent, titulo, valor, fila, columna):
+        card = tk.Frame(
+            parent,
+            bg=COLORS["bg"],
+            padx=22,
+            pady=18
+        )
+        card.grid(
+            row=fila,
+            column=columna,
+            sticky="nsew",
+            padx=10,
+            pady=10
         )
 
-        campos = [
-            ("Nombre", "ADONIS SOLORZANO"),
-            ("Correo", "ADONIS@uleam.edu.ec"),
-            ("Contraseña", "Admin123"),
-            ("Teléfono", "0991234567"),
-            ("Nivel de autoridad", "Alto"),
-            ("Departamento", "Nivelación"),
-        ]
-        campos = [
-            ("Nombre", "Anthony Salazar"),
-            ("Correo", "anthonysalazar006@gmail.com"),
-            ("Contraseña", "Admin123"),
-            ("Teléfono", "0991234567"),
-            ("Nivel de autoridad", "Alto"),
-            ("Departamento", "Nivelación"),
-        ]
-        self._entries = {}
-        for i, (label, default) in enumerate(campos):
-            lbl(contenedor, label).grid(row=4+i, column=0, sticky="w", pady=3)
-            e = entry(contenedor, show="*" if label == "Contraseña" else None)
-            e.insert(0, default)
-            e.grid(row=4+i, column=1, pady=3, padx=8)
-            self._entries[label] = e
+        tk.Label(
+            card,
+            text=titulo,
+            font=("Segoe UI", 11, "bold"),
+            bg=COLORS["bg"],
+            fg=COLORS["text2"]
+        ).pack(anchor="w")
 
-        btn(contenedor, "🚀 Iniciar Sistema", self._iniciar,
-            color=COLORS["success"]).grid(
-            row=4+len(campos)+1, column=0, columnspan=2, pady=20
+        lbl_valor = tk.Label(
+            card,
+            text=valor,
+            font=("Segoe UI", 28, "bold"),
+            bg=COLORS["bg"],
+            fg=COLORS["success"]
+        )
+        lbl_valor.pack(anchor="w", pady=(8, 0))
+
+        self._cards[titulo] = lbl_valor
+
+    def refrescar(self):
+        self._cards["Estudiantes"].config(text=str(len(estado.estudiantes)))
+        self._cards["Docentes"].config(text=str(len(estado.docentes)))
+        self._cards["Asignaturas"].config(text=str(len(estado.asignaturas)))
+        self._cards["Paralelos"].config(text=str(len(estado.paralelos)))
+        self._cards["Sedes"].config(text=str(len(estado.sedes)))
+        self._cards["Carreras"].config(text=str(len(estado.carreras)))
+
+        texto_estado = (
+            f"Institución: {estado.gestor.nombre_institucion if estado.gestor else 'No iniciada'}\n"
+            f"Administradores registrados: {len(estado.admins)}\n"
+            f"Reportes disponibles: calificaciones, docentes y sedes\n"
+            f"Estado: sistema cargado correctamente"
         )
 
-        self._lbl_estado = lbl(contenedor, "", color=COLORS["text2"])
-        self._lbl_estado.grid(row=4+len(campos)+2, column=0, columnspan=2)
-
-    def _iniciar(self):
-        nombre_inst = self.e_institucion.get().strip()
-        nombre_admin = self._entries["Nombre"].get().strip()
-        correo = self._entries["Correo"].get().strip()
-        contrasena = self._entries["Contraseña"].get().strip()
-        telefono = self._entries["Teléfono"].get().strip()
-        nivel = self._entries["Nivel de autoridad"].get().strip()
-        depto = self._entries["Departamento"].get().strip()
-
-        if not all([nombre_inst, nombre_admin, correo, contrasena]):
-            messagebox.showwarning("Campos incompletos", "Completa todos los campos obligatorios.")
-            return
-
-        try:
-            admin = Administrador(
-                id=1, nombre=nombre_admin, correo=correo,
-                contrasena=contrasena, telefono=telefono,
-                nivel_autoridad=nivel, departamento_asignado=depto,
-            )
-            estado.admin = admin
-            estado.gestor = GestorNivelacion(nombre_inst, admin)
-            self._lbl_estado.config(
-                text=f"Sistema iniciado como: {nombre_admin}",
-                fg=COLORS["success"]
-            )
-            messagebox.showinfo("SIGEN", f"Sistema iniciado correctamente.\nBienvenido, {nombre_admin}.")
-        except Exception as ex:
-            messagebox.showerror("Error", str(ex))
+        self._lbl_estado.config(text=texto_estado)
 
 
 # TAB 2 — SEDES
