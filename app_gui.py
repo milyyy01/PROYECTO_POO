@@ -1428,12 +1428,44 @@ class TabEstudiantes(tk.Frame):
 
         separador(self)
         lbl(self, "Estudiantes registrados", bold=True).pack()
-        self._lista = tk.Listbox(
-            self, bg=COLORS["bg"], fg=COLORS["text"],
-            font=("Segoe UI", 10), height=6, relief="flat",
-            selectbackground=COLORS["accent"],
+
+        columnas = ("id", "nombre", "correo", "carrera", "sede", "estado")
+
+        self._tabla = ttk.Treeview(
+            self,
+            columns=columnas,
+            show="headings",
+            height=7,
+            style="TablaSIGEN.Treeview"
         )
-        self._lista.pack(fill="x", padx=20, pady=6)
+
+        self._tabla.heading("id", text="ID")
+        self._tabla.heading("nombre", text="Nombre")
+        self._tabla.heading("correo", text="Correo")
+        self._tabla.heading("carrera", text="Carrera")
+        self._tabla.heading("sede", text="Sede")
+        self._tabla.heading("estado", text="Estado")
+
+        self._tabla.column("id", width=60, anchor="center")
+        self._tabla.column("nombre", width=180)
+        self._tabla.column("correo", width=230)
+        self._tabla.column("carrera", width=200)
+        self._tabla.column("sede", width=160)
+        self._tabla.column("estado", width=100, anchor="center")
+
+        self._tabla.pack(fill="x", padx=20, pady=6)
+
+        self._tabla.tag_configure(
+            "fila_par",
+            background=COLORS["bg"],
+            foreground=COLORS["text"]
+        )
+
+        self._tabla.tag_configure(
+            "fila_impar",
+            background=COLORS["surface"],
+            foreground=COLORS["text"]
+        )
 
     def _registrar(self):
         if not self._validar_sistema(): return
@@ -1473,7 +1505,7 @@ class TabEstudiantes(tk.Frame):
             estado.gestor.registrar_estudiante(est)
             estado.estudiantes.append(est)
             guardar_datos()
-            self._lista.insert(tk.END, f"  {est.nombre} — {carrera.nombre_carrera}")
+            self.refrescar()
             messagebox.showinfo("OK", f"Estudiante '{est.nombre}' registrado.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
@@ -1510,13 +1542,29 @@ class TabEstudiantes(tk.Frame):
         self._cb_sede["values"] = [s.nombre_sede for s in estado.sedes]
         self._cb_carrera["values"] = [c.nombre_carrera for c in estado.carreras]
 
-        self._lista.delete(0, tk.END)
+        for item in self._tabla.get_children():
+            self._tabla.delete(item)
 
-        for est in estado.estudiantes:
-            self._lista.insert(
-            tk.END,
-            f"{est.nombre}"
-        )
+        for i, est in enumerate(estado.estudiantes):
+            sede = est.sede.nombre_sede if getattr(est, "sede", None) else "Sin sede"
+            carrera = est.carrera.nombre_carrera if getattr(est, "carrera", None) else "Sin carrera"
+            estado_academico = getattr(est, "estado_academico", "Activo")
+
+            etiqueta = "fila_par" if i % 2 == 0 else "fila_impar"
+
+            self._tabla.insert(
+                "",
+                tk.END,
+                values=(
+                    est.id,
+                    est.nombre,
+                    est.correo,
+                    carrera,
+                    sede,
+                    estado_academico
+                ),
+                tags=(etiqueta,)
+            )
 
 
 # TAB 5 — ASIGNATURAS
@@ -1561,12 +1609,44 @@ class TabAsignaturas(tk.Frame):
 
         separador(self)
         lbl(self, "Asignaturas registradas", bold=True).pack()
-        self._lista = tk.Listbox(
-            self, bg=COLORS["bg"], fg=COLORS["text"],
-            font=("Segoe UI", 10), height=6, relief="flat",
-            selectbackground=COLORS["accent"],
+
+        columnas = ("id", "nombre", "creditos", "cupos", "docente", "carrera")
+
+        self._tabla = ttk.Treeview(
+            self,
+            columns=columnas,
+            show="headings",
+            height=7,
+            style="TablaSIGEN.Treeview"
         )
-        self._lista.pack(fill="x", padx=20, pady=6)
+
+        self._tabla.heading("id", text="ID")
+        self._tabla.heading("nombre", text="Nombre")
+        self._tabla.heading("creditos", text="Créditos")
+        self._tabla.heading("cupos", text="Cupos")
+        self._tabla.heading("docente", text="Docente")
+        self._tabla.heading("carrera", text="Carrera")
+
+        self._tabla.column("id", width=80, anchor="center")
+        self._tabla.column("nombre", width=220)
+        self._tabla.column("creditos", width=90, anchor="center")
+        self._tabla.column("cupos", width=90, anchor="center")
+        self._tabla.column("docente", width=200)
+        self._tabla.column("carrera", width=220)
+
+        self._tabla.pack(fill="x", padx=20, pady=6)
+
+        self._tabla.tag_configure(
+            "fila_par",
+            background=COLORS["bg"],
+            foreground=COLORS["text"]
+        )
+
+        self._tabla.tag_configure(
+            "fila_impar",
+            background=COLORS["surface"],
+            foreground=COLORS["text"]
+        )
 
     def _registrar(self):
         if not self._validar_sistema(): return
@@ -1609,7 +1689,7 @@ class TabAsignaturas(tk.Frame):
             estado.gestor.registrar_asignatura(asig)
             estado.asignaturas.append(asig)
             guardar_datos()
-            self._lista.insert(tk.END, f"  {asig.nombre} — {asig.creditos} créditos")
+            self.refrescar()
             messagebox.showinfo("OK", f"Asignatura '{asig.nombre}' registrada.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
@@ -1623,6 +1703,38 @@ class TabAsignaturas(tk.Frame):
     def refrescar(self):
         self._cb_docente["values"] = [d.nombre for d in estado.docentes]
         self._cb_carrera["values"] = [c.nombre_carrera for c in estado.carreras]
+
+        for item in self._tabla.get_children():
+            self._tabla.delete(item)
+
+        for i, asig in enumerate(estado.asignaturas):
+            docente = asig.docente.nombre if asig.docente else "Sin docente"
+            cupos = asig.cupos_maximos
+
+            carrera = next(
+                (
+                    c.nombre_carrera
+                    for c in estado.carreras
+                    if asig in c.obtener_asignaturas()
+                ),
+                "Sin carrera"
+            )
+
+            etiqueta = "fila_par" if i % 2 == 0 else "fila_impar"
+
+            self._tabla.insert(
+                "",
+                tk.END,
+                values=(
+                    asig.id_asignatura,
+                    asig.nombre,
+                    asig.creditos,
+                    cupos,
+                    docente,
+                    carrera
+                ),
+                tags=(etiqueta,)
+            )
 
 
 # TAB 6 — PARALELOS
