@@ -795,7 +795,7 @@ class AppSIGEN(tk.Tk):
         login.mainloop()
 
     def _construir_ui(self):
-        # Header:
+        # HEADER SUPERIOR
         header = tk.Frame(self, bg=COLORS["accent"], pady=10)
         header.pack(fill="x")
 
@@ -824,7 +824,7 @@ class AppSIGEN(tk.Tk):
         tk.Label(
             header,
             text="SIGEN — Universidad Laica Eloy Alfaro de Manabí",
-            font=("Segoe UI", 14, "bold"),
+            font=("Segoe UI", 15, "bold"),
             bg=COLORS["accent"],
             fg="white",
         ).grid(row=0, column=1)
@@ -839,35 +839,75 @@ class AppSIGEN(tk.Tk):
             activebackground="#b91c1c",
             activeforeground="white",
             relief="flat",
-            padx=12,
-            pady=5,
+            padx=14,
+            pady=6,
             cursor="hand2",
         ).grid(row=0, column=2, sticky="e", padx=16)
 
-        # Body:
+        # CUERPO PRINCIPAL
         body = tk.Frame(self, bg=COLORS["bg"])
-        body.pack(fill="both", expand=True, padx=12, pady=8)
+        body.pack(fill="both", expand=True)
 
-        # Notebook (pestañas)
-        style = ttk.Style()
-        style.theme_use("default")
-        style.configure(
-            "TNotebook", background=COLORS["bg"], borderwidth=0
+        body.grid_columnconfigure(0, weight=0)
+        body.grid_columnconfigure(1, weight=1)
+        body.grid_rowconfigure(0, weight=1)
+
+        # MENÚ LATERAL
+        self.menu_lateral = tk.Frame(
+            body,
+            bg=COLORS["surface"],
+            width=210,
+            padx=12,
+            pady=18
         )
-        style.configure(
-            "TNotebook.Tab",
-            background=COLORS["surface"],
-            foreground=COLORS["text2"],
-            font=("Segoe UI", 10, "bold"),
-            padding=[12, 6],
+        self.menu_lateral.grid(row=0, column=0, sticky="ns")
+        self.menu_lateral.grid_propagate(False)
+
+        tk.Label(
+            self.menu_lateral,
+            text="MÓDULOS",
+            font=("Segoe UI", 11, "bold"),
+            bg=COLORS["surface"],
+            fg=COLORS["text2"]
+        ).pack(anchor="w", pady=(0, 14))
+
+        # CONTENIDO DERECHO
+        self.contenido = tk.Frame(body, bg=COLORS["bg"])
+        self.contenido.grid(row=0, column=1, sticky="nsew")
+        self.contenido.grid_rowconfigure(0, weight=1)
+        self.contenido.grid_columnconfigure(0, weight=1)
+
+        # Consola abajo
+        console_frame = tk.Frame(self, bg=COLORS["bg"])
+        console_frame.pack(fill="x", padx=12, pady=(0, 8))
+
+        tk.Label(
+            console_frame,
+            text="Consola del sistema",
+            font=("Segoe UI", 9, "bold"),
+            bg=COLORS["bg"],
+            fg=COLORS["text2"]
+        ).pack(anchor="w")
+
+        self.consola = scrolledtext.ScrolledText(
+            console_frame,
+            height=7,
+            state="disabled",
+            bg="#0f0f1a",
+            fg=COLORS["success"],
+            font=("Courier New", 9),
+            relief="flat",
+            insertbackground=COLORS["text"],
         )
-        style.map(
-            "TNotebook.Tab",
-            background=[("selected", COLORS["accent"])],
-            foreground=[("selected", "white")],
-        )
+        self.consola.pack(fill="x")
+
+        self._stdout_gui = ConsolaGUI(self.consola)
+        self._stdout_gui.activar()
 
         # Estilo para tablas
+        style = ttk.Style()
+        style.theme_use("default")
+
         style.configure(
             "TablaSIGEN.Treeview",
             background=COLORS["bg"],
@@ -892,72 +932,79 @@ class AppSIGEN(tk.Tk):
             foreground=[("selected", "white")]
         )
 
-        nb = ttk.Notebook(body)
-        nb.pack(fill="both", expand=True)
-
-        # Consola abajo
-        console_frame = tk.Frame(self, bg=COLORS["bg"])
-        console_frame.pack(fill="x", padx=12, pady=(0, 8))
-        tk.Label(
-            console_frame, text="Consola del sistema",
-            font=("Segoe UI", 9, "bold"),
-            bg=COLORS["bg"], fg=COLORS["text2"]
-        ).pack(anchor="w")
-        self.consola = scrolledtext.ScrolledText(
-            console_frame, height=8, state="disabled",
-            bg="#0f0f1a", fg=COLORS["success"],
-            font=("Courier New", 9), relief="flat",
-            insertbackground=COLORS["text"],
-        )
-        self.consola.pack(fill="x")
-
-        # Redirigir stdout
-        self._stdout_gui = ConsolaGUI(self.consola)
-        self._stdout_gui.activar()
-
-        # Pestañas: 
-        self.tab_inicio    = TabInicio(nb, self)
-        self.tab_sede      = TabSede(nb)
-        self.tab_docentes  = TabDocentes(nb)
-        self.tab_estudiantes = TabEstudiantes(nb)
-        self.tab_asignaturas = TabAsignaturas(nb)
-        self.tab_paralelos   = TabParalelos(nb)
-        self.tab_matricula   = TabMatricula(nb)
-        self.tab_calificar   = TabCalificar(nb)
-        self.tab_reportes    = TabReportes(nb)
-        self.tab_resumen     = TabResumen(nb)
-
-        usuario = estado.usuario_actual
+        # Crear pestañas como frames normales
+        self.tabs = {}
 
         if isinstance(usuario, Docente):
-            nb.add(self.tab_calificar, text="Calificar")
-            nb.add(self.tab_reportes, text="Reportes")
-            nb.add(self.tab_resumen, text="Resumen")
+            self.tabs["Calificar"] = TabCalificar(self.contenido)
+            self.tabs["Reportes"] = TabReportes(self.contenido)
+            self.tabs["Resumen"] = TabResumen(self.contenido)
 
         elif isinstance(usuario, Estudiante):
-            nb.add(self.tab_calificar, text="Mis notas")
-            nb.add(self.tab_reportes, text="Mis reportes")
-            nb.add(self.tab_resumen, text="Resumen")
+            self.tabs["Mis notas"] = TabCalificar(self.contenido)
+            self.tabs["Mis reportes"] = TabReportes(self.contenido)
+            self.tabs["Resumen"] = TabResumen(self.contenido)
 
         else:
-            nb.add(self.tab_inicio,      text="Inicio")
-            nb.add(self.tab_sede,        text="Sedes")
-            nb.add(self.tab_docentes,    text="Docentes")
-            nb.add(self.tab_estudiantes, text="Estudiantes")
-            nb.add(self.tab_asignaturas, text="Asignaturas")
-            nb.add(self.tab_paralelos,   text="Paralelos")
-            nb.add(self.tab_matricula,   text="Matrícula")
-            nb.add(self.tab_reportes,    text="Reportes")
-            nb.add(self.tab_resumen,     text="Resumen")
+            self.tabs["Inicio"] = TabInicio(self.contenido, self)
+            self.tabs["Sedes"] = TabSede(self.contenido)
+            self.tabs["Docentes"] = TabDocentes(self.contenido)
+            self.tabs["Estudiantes"] = TabEstudiantes(self.contenido)
+            self.tabs["Asignaturas"] = TabAsignaturas(self.contenido)
+            self.tabs["Paralelos"] = TabParalelos(self.contenido)
+            self.tabs["Matrícula"] = TabMatricula(self.contenido)
+            self.tabs["Reportes"] = TabReportes(self.contenido)
+            self.tabs["Resumen"] = TabResumen(self.contenido)
 
-        nb.bind("<<NotebookTabChanged>>", self._on_tab_change)
+        self.botones_menu = {}
 
-    def _on_tab_change(self, event):
-        """Refresca combos cuando se cambia de pestaña."""
-        tab = event.widget.nametowidget(event.widget.select())
+        for nombre, tab in self.tabs.items():
+            tab.grid(row=0, column=0, sticky="nsew")
+            self._crear_boton_menu(nombre)
+
+        primer_tab = list(self.tabs.keys())[0]
+        self._mostrar_tab(primer_tab)
+
+    def _crear_boton_menu(self, nombre):
+        boton = tk.Button(
+            self.menu_lateral,
+            text=nombre,
+            command=lambda n=nombre: self._mostrar_tab(n),
+            font=("Segoe UI", 10, "bold"),
+            bg=COLORS["surface"],
+            fg=COLORS["text2"],
+            activebackground=COLORS["accent"],
+            activeforeground="white",
+            relief="flat",
+            anchor="w",
+            padx=14,
+            pady=10,
+            cursor="hand2"
+        )
+
+        boton.pack(fill="x", pady=3)
+        self.botones_menu[nombre] = boton
+
+
+    def _mostrar_tab(self, nombre):
+        tab = self.tabs[nombre]
+
         if hasattr(tab, "refrescar"):
             tab.refrescar()
 
+        tab.tkraise()
+
+        for texto, boton in self.botones_menu.items():
+            if texto == nombre:
+                boton.config(
+                    bg=COLORS["accent"],
+                    fg="white"
+                )
+            else:
+                boton.config(
+                    bg=COLORS["surface"],
+                    fg=COLORS["text2"]
+                )
 
 # TAB 1 — INICIO / Configurar sistema
 
