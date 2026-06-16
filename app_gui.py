@@ -628,74 +628,161 @@ class LoginWindow(tk.Tk):
         self.configure(bg=COLORS["bg"])
         self.state("zoomed")
 
+        self._mostrar_password = tk.IntVar(value=0)
+
         self._construir()
 
-    def _centrar_ventana(self):
-        self.update_idletasks()
-        ancho = 520
-        alto = 420
-        x = (self.winfo_screenwidth() // 2) - (ancho // 2)
-        y = (self.winfo_screenheight() // 2) - (alto // 2)
-        self.geometry(f"{ancho}x{alto}+{x}+{y}")
-
     def _construir(self):
-        header = tk.Frame(self, bg=COLORS["accent"], height=90)
-        header.pack(fill="x")
+        # Fondo principal
+        main = tk.Frame(self, bg=COLORS["bg"])
+        main.pack(fill="both", expand=True)
+
+        main.grid_columnconfigure(0, weight=3)
+        main.grid_columnconfigure(1, weight=2)
+        main.grid_rowconfigure(0, weight=1)
+
+        # PANEL IZQUIERDO
+        panel_izq = tk.Frame(
+            main,
+            bg=COLORS["accent"],
+            padx=70,
+            pady=60
+        )
+        panel_izq.grid(row=0, column=0, sticky="nsew")
 
         tk.Label(
-            header,
+            panel_izq,
             text="SIGEN",
-            font=("Segoe UI", 24, "bold"),
+            font=("Segoe UI", 44, "bold"),
             bg=COLORS["accent"],
             fg="white"
-        ).pack(pady=(18, 0))
+        ).pack(anchor="w", pady=(80, 8))
 
         tk.Label(
-            header,
+            panel_izq,
             text="Sistema de Gestión de Nivelación",
-            font=("Segoe UI", 10),
+            font=("Segoe UI", 18, "bold"),
             bg=COLORS["accent"],
             fg="white"
-        ).pack()
+        ).pack(anchor="w")
 
-        contenedor = tk.Frame(self, bg=COLORS["bg"])
-        contenedor.pack(fill="both", expand=True)
+        tk.Label(
+            panel_izq,
+            text="Universidad Laica Eloy Alfaro de Manabí",
+            font=("Segoe UI", 12),
+            bg=COLORS["accent"],
+            fg="#e9d5ff"
+        ).pack(anchor="w", pady=(8, 35))
+
+        descripcion = (
+            "Administra estudiantes, docentes, asignaturas,\n"
+            "paralelos, matrículas, calificaciones y reportes\n"
+            "desde una sola plataforma académica."
+        )
+
+        tk.Label(
+            panel_izq,
+            text=descripcion,
+            font=("Segoe UI", 12),
+            bg=COLORS["accent"],
+            fg="white",
+            justify="left"
+        ).pack(anchor="w", pady=(0, 35))
+
+        # Mini tarjetas informativas
+        cards = tk.Frame(panel_izq, bg=COLORS["accent"])
+        cards.pack(anchor="w", fill="x")
+
+        self._login_card_info(
+            cards,
+            "Gestión académica",
+            "Control de estudiantes, docentes y asignaturas."
+        )
+
+        self._login_card_info(
+            cards,
+            "Reportes",
+            "Consulta de calificaciones, sedes y docentes."
+        )
+
+        self._login_card_info(
+            cards,
+            "Acceso por roles",
+            "Administrador, docente y estudiante."
+        )
+
+        tk.Label(
+            panel_izq,
+            text="Proyecto POO — SIGEN",
+            font=("Segoe UI", 10, "bold"),
+            bg=COLORS["accent"],
+            fg="#ddd6fe"
+        ).pack(anchor="w", side="bottom", pady=20)
+
+        # PANEL DERECHO
+        panel_der = tk.Frame(
+            main,
+            bg=COLORS["bg"],
+            padx=60,
+            pady=60
+        )
+        panel_der.grid(row=0, column=1, sticky="nsew")
+
+        panel_der.grid_rowconfigure(0, weight=1)
+        panel_der.grid_rowconfigure(2, weight=1)
+        panel_der.grid_columnconfigure(0, weight=1)
+
+        card_sombra = tk.Frame(
+            panel_der,
+            bg="#11111f",
+            padx=4,
+            pady=4
+        )
+        card_sombra.grid(row=1, column=0)
 
         card = tk.Frame(
-            contenedor,
+            card_sombra,
             bg=COLORS["surface"],
-            padx=35,
-            pady=28
+            padx=42,
+            pady=36
         )
-        card.pack(expand=True)
+        card.pack()
 
         tk.Label(
             card,
-            text="Iniciar sesión",
-            font=("Segoe UI", 16, "bold"),
+            text="Bienvenido",
+            font=("Segoe UI", 24, "bold"),
             bg=COLORS["surface"],
             fg=COLORS["text"]
-        ).grid(row=0, column=0, columnspan=2, pady=(0, 18))
+        ).pack(anchor="w")
 
         tk.Label(
             card,
-            text="Correo",
+            text="Ingresa tus credenciales para continuar",
+            font=("Segoe UI", 10),
+            bg=COLORS["surface"],
+            fg=COLORS["text2"]
+        ).pack(anchor="w", pady=(4, 26))
+
+        tk.Label(
+            card,
+            text="Correo electrónico",
             font=("Segoe UI", 10, "bold"),
             bg=COLORS["surface"],
             fg=COLORS["text"]
-        ).grid(row=1, column=0, sticky="w", pady=6)
+        ).pack(anchor="w", pady=(0, 6))
 
         self.correo = tk.Entry(
             card,
-            width=32,
-            font=("Segoe UI", 10),
+            width=34,
+            font=("Segoe UI", 11),
             bg=COLORS["bg"],
             fg=COLORS["text"],
             insertbackground=COLORS["text"],
             relief="flat",
-            bd=6
+            bd=8
         )
-        self.correo.grid(row=2, column=0, columnspan=2, pady=(0, 12))
+        self.correo.pack(pady=(0, 18), ipady=3)
 
         tk.Label(
             card,
@@ -703,45 +790,93 @@ class LoginWindow(tk.Tk):
             font=("Segoe UI", 10, "bold"),
             bg=COLORS["surface"],
             fg=COLORS["text"]
-        ).grid(row=3, column=0, sticky="w", pady=6)
+        ).pack(anchor="w", pady=(0, 6))
 
         self.password = tk.Entry(
             card,
-            width=32,
+            width=34,
             show="*",
-            font=("Segoe UI", 10),
+            font=("Segoe UI", 11),
             bg=COLORS["bg"],
             fg=COLORS["text"],
             insertbackground=COLORS["text"],
             relief="flat",
-            bd=6
+            bd=8
         )
-        self.password.grid(row=4, column=0, columnspan=2, pady=(0, 18))
+        self.password.pack(pady=(0, 10), ipady=3)
+
+        tk.Checkbutton(
+            card,
+            text="Mostrar contraseña",
+            variable=self._mostrar_password,
+            command=self._toggle_password,
+            font=("Segoe UI", 9),
+            bg=COLORS["surface"],
+            fg=COLORS["text2"],
+            activebackground=COLORS["surface"],
+            activeforeground=COLORS["text"],
+            selectcolor=COLORS["bg"]
+        ).pack(anchor="w", pady=(0, 22))
 
         tk.Button(
             card,
-            text="Iniciar sesión",
+            text="Ingresar al sistema",
             command=self.login,
-            font=("Segoe UI", 10, "bold"),
+            font=("Segoe UI", 11, "bold"),
             bg=COLORS["success"],
             fg="white",
             activebackground=COLORS["accent2"],
             activeforeground="white",
             relief="flat",
-            padx=22,
-            pady=8,
+            padx=28,
+            pady=10,
             cursor="hand2"
-        ).grid(row=5, column=0, columnspan=2, pady=(4, 12))
+        ).pack(fill="x", pady=(0, 18))
 
         tk.Label(
             card,
-            text="Acceso para administradores, docentes y estudiantes",
+            text="Acceso autorizado para administradores, docentes y estudiantes",
             font=("Segoe UI", 8),
             bg=COLORS["surface"],
-            fg=COLORS["text2"]
-        ).grid(row=6, column=0, columnspan=2)
+            fg=COLORS["text2"],
+            wraplength=280,
+            justify="center"
+        ).pack()
 
+        self.correo.focus()
         self.bind("<Return>", lambda event: self.login())
+
+    def _login_card_info(self, parent, titulo, descripcion):
+        caja = tk.Frame(
+            parent,
+            bg="#6d28d9",
+            padx=18,
+            pady=12
+        )
+        caja.pack(fill="x", pady=7)
+
+        tk.Label(
+            caja,
+            text=titulo,
+            font=("Segoe UI", 11, "bold"),
+            bg="#6d28d9",
+            fg="white"
+        ).pack(anchor="w")
+
+        tk.Label(
+            caja,
+            text=descripcion,
+            font=("Segoe UI", 9),
+            bg="#6d28d9",
+            fg="#ede9fe",
+            justify="left"
+        ).pack(anchor="w", pady=(3, 0))
+
+    def _toggle_password(self):
+        if self._mostrar_password.get() == 1:
+            self.password.config(show="")
+        else:
+            self.password.config(show="*")
 
     def login(self):
         usuario = iniciar_sesion(
