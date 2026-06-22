@@ -1,4 +1,4 @@
-﻿"""
+"""
 app_gui.py — Interfaz gráfica SIGEN con Tkinter
 Ejecutar desde la raíz del proyecto: python app_gui.py
 """
@@ -26,6 +26,32 @@ from models.modalidad import Modalidad
 from models.periodo_academico import PeriodoAcademico
 from models.oferta import Oferta
 from logic.gestor_nivelacion import GestorNivelacion
+from Sistema_fachada import SistemaFachada
+
+# Crear instancia global de la fachada
+sistema = SistemaFachada()
+
+from datetime import date
+
+def cargar_datos_iniciales():
+    # Crear sedes
+    sede1 = sistema.crear_sede(1, "Sede Matriz", "Guayaquil", "Av. Principal")
+    sede2 = sistema.crear_sede(2, "Sede Sur", "Guayaquil", "Av. Secundaria")
+
+    # Crear ofertas
+    oferta1 = sistema.crear_oferta(sede1, 101, "Ingeniería en Software", "Presencial", 30, 120)
+    oferta2 = sistema.crear_oferta(sede1, 102, "Ingeniería en Sistemas", "Presencial", 25, 110)
+
+    # Crear periodos
+    periodo1 = sistema.crear_periodo(oferta1, 201, "2026-I", date(2026, 4, 1), date(2026, 9, 30))
+    periodo2 = sistema.crear_periodo(oferta2, 202, "2026-II", date(2026, 10, 1), date(2027, 3, 31))
+
+    # Crear evaluaciones
+    eval1 = sistema.crear_evaluacion(301, "Examen Parcial", "Quiz", date(2026, 5, 15), 100)
+    eval2 = sistema.crear_evaluacion(302, "Proyecto Final", "Tarea", date(2026, 6, 30), 100)
+
+# Llamar esta función al inicio
+cargar_datos_iniciales()
 
 
 # UTILIDAD: capturar prints del sistema en la consola de la GUI
