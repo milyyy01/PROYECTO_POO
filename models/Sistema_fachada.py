@@ -1,5 +1,3 @@
-# fachada_sistema.py
-
 from logic.gestor_nivelacion import GestorNivelacion
 from models.sede import Sede
 from models.oferta import Oferta
@@ -10,7 +8,6 @@ class SistemaFachada:
     """
     Fachada para el sistema de nivelación.
     Centraliza el acceso a sedes, ofertas, periodos y evaluaciones.
-    Mantiene la lógica existente del sistema.
     """
 
     def __init__(self, nombre_institucion, admin):
@@ -20,9 +17,8 @@ class SistemaFachada:
         self._periodos = []
         self._evaluaciones = []
 
-    # -------------------
+    
     # SEDE
-    # -------------------
     def crear_sede(self, id_sede, nombre, ciudad, direccion):
         sede = Sede(id_sede, nombre, ciudad, direccion)
         self._sedes.append(sede)
@@ -30,10 +26,9 @@ class SistemaFachada:
 
     def listar_sedes(self):
         return self._sedes
+    
 
-    # -------------------
     # OFERTA
-    # -------------------
     def crear_oferta(self, sede, id_oferta, carrera, modalidad,
                  cupo=30, precio=0, fecha_apertura=None, fecha_cierre=None):
      oferta = Oferta(id_oferta, carrera, modalidad, cupo, precio,
@@ -45,9 +40,8 @@ class SistemaFachada:
     def listar_ofertas(self):
         return self._ofertas
 
-    # -------------------
+
     # PERIODO ACADÉMICO
-    # -------------------
     def crear_periodo(self, oferta, id_periodo, nombre, inicio, fin):
         periodo = PeriodoAcademico(id_periodo, nombre, inicio, fin)
         oferta.agregar_periodo(periodo)
@@ -57,9 +51,8 @@ class SistemaFachada:
     def listar_periodos(self):
         return self._periodos
 
-    # -------------------
+
     # EVALUACIONES
-    # -------------------
     def crear_evaluacion(self, id_eval, nombre, tipo, fecha, puntaje_max):
         evaluacion = Evaluacion(id_eval, nombre, tipo, fecha, puntaje_max)
         self._evaluaciones.append(evaluacion)
@@ -68,9 +61,8 @@ class SistemaFachada:
     def listar_evaluaciones(self):
         return self._evaluaciones
 
-    # -------------------
-    # FUNCIONES DEL GESTOR (sin modificar lógica)
-    # -------------------
+
+    # FUNCIONES DEL GESTOR 
     def inscribir_estudiante(self, estudiante, oferta):
         self._gestor.inscribir_estudiante(estudiante, oferta)
 
