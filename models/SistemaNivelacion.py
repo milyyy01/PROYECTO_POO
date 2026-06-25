@@ -145,3 +145,9 @@ class SistemaNivelacion:
             f"Paralelos: {len(self._paralelos)} | "
             f"Sedes: {len(self._sedes)}"
         )
+    
+    def listar_todos_reportes(self):
+        """
+       Devuelve la lista de todos los reportes generados.
+       """
+        return self._reportes  # Ajusta al atributo que contiene los reportes en tu gestor

@@ -1,112 +1,83 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from models.estudiante import Estudiante
-    from models.sede import Sede
-    from models.carrera import Carrera
-    from models.periodo_academico import PeriodoAcademico
+from datetime import date, datetime
 
 class Oferta:
-    def __init__(
-        self,
-        cupos_total,
-        cupos_ocupados,
-        puntaje_minimo,
-        puntaje_maximo,
-        fecha_apertura,
-        fecha_cierre,
-        sede: "Sede" = None,
-        carrera: "Carrera" = None,
-        periodo_academico: "PeriodoAcademico" =None
-    ):
-
-        if cupos_total <= 0:
-            raise ValueError("El total de cupos debe ser mayor a cero.")
-        if puntaje_minimo > puntaje_maximo:
-            raise ValueError("El puntaje mínimo no puede ser mayor al máximo.")
-        
-        self._cupos_total = cupos_total
-        self._cupos_ocupados = cupos_ocupados
-        self.puntaje_minimo = puntaje_minimo
-        self.puntaje_maximo = puntaje_maximo
-        self.fecha_apertura = fecha_apertura
-        self.fecha_cierre = fecha_cierre
-        self._sede = sede
+    def __init__(self, id_oferta, carrera, modalidad, cupo_total=30, precio=0,
+                 fecha_apertura=None, fecha_cierre=None):
+        self._id_oferta = id_oferta
         self._carrera = carrera
-        self.periodo_academico = periodo_academico
-        self.abierta = True
-        self.__inscripciones_rechazadas = []
-        
-    # Propiedades:
-    
+        self._modalidad = modalidad
+        self._cupo_total = cupo_total
+        self._cupo_disponible = cupo_total
+        self._precio = precio
+        self._fecha_apertura = self._convertir_fecha(fecha_apertura)
+        self._fecha_cierre = self._convertir_fecha(fecha_cierre)
+        self._sede = None
+        self._periodos = []
+
+    def _convertir_fecha(self, fecha):
+        if isinstance(fecha, str):
+            return datetime.strptime(fecha, "%Y-%m-%d").date()
+        return fecha
+
     @property
-    def cupos_total(self):
-        return self._cupos_total
- 
-    @property
-    def cupos_ocupados(self):
-        return self._cupos_ocupados
- 
-    @property
-    def sede(self):
-        return self._sede
- 
+    def id_oferta(self):
+        return self._id_oferta
+
     @property
     def carrera(self):
         return self._carrera
-    
-    # Métodos: 
-     
-    def estado(self):
-        return "Abierta" if self.abierta else "Cerrada"
 
-    def verificar_cupos(self):
-        disponibles = self._cupos_total - self._cupos_ocupados
-        if disponibles > 0:
-            print(f"Cupos disponibles: {disponibles} de {self._cupos_total}.")
-            return True
-        print("No hay cupos disponibles en esta oferta.")
-        return False
+    @property
+    def modalidad(self):
+        return self._modalidad
 
-    def aprobar_inscripcion(self, estudiante: "Estudiante", puntaje):
-        if not self.abierta:
-            return f"Inscripción rechazada: la oferta está cerrada."
-        if not self.verificar_cupos():
-            return f"Inscripción rechazada: no hay cupos disponibles."
-        if not (self.puntaje_minimo <= puntaje <= self.puntaje_maximo):
-            return (f"Inscripción rechazada: puntaje {puntaje} no está en el rango "
-                    f"[{self.puntaje_minimo} - {self.puntaje_maximo}].")
-        self._cupos_ocupados += 1
-        # Si hay carrera asociada, inscribe al estudiante en ella
-        if self._carrera:
-            self._carrera._inscribir_estudiante(estudiante)
-        mensaje = f"Inscripción aprobada para '{estudiante.nombre}' en esta oferta."
-        print(mensaje)
-        return mensaje
+    @property
+    def cupo_disponible(self):
+        return self._cupo_disponible
 
-    def rechazar_inscripcion(self, estudiante: "Estudiante"):
-        self.__inscripciones_rechazadas.append(estudiante.nombre)
-        mensaje = f"Inscripción rechazada para '{estudiante.nombre}'."
-        print(mensaje)
-        return mensaje
+    @property
+    def sede(self):
+        return self._sede
 
-    def ver_cupo_sede(self):
-        disponibles = self._cupos_total - self._cupos_ocupados
-        sede_nombre = self._sede.nombre_sede if self._sede else "Sin sede asignada"
-        print(f"Cupos disponibles en sede '{sede_nombre}': {disponibles}")
-        return disponibles
+    @property
+    def periodos(self):
+        return self._periodos
 
-    def cerrar_ofertas(self):
-        self.abierta = False
-        return "Oferta cerrada."
-    
+    @property
+    def fecha_apertura(self):
+        return self._fecha_apertura
+
+    @property
+    def fecha_cierre(self):
+        return self._fecha_cierre
+
+    def set_sede(self, sede):
+        self._sede = sede
+
+    def agregar_periodo(self, periodo):
+        if periodo not in self._periodos:
+            self._periodos.append(periodo)
+            periodo.set_oferta(self)
+
+    def reducir_cupo(self, cantidad=1):
+        if self._cupo_disponible >= cantidad:
+            self._cupo_disponible -= cantidad
+        else:
+            raise ValueError("No hay suficientes cupos disponibles")
+
+    def aumentar_cupo(self, cantidad=1):
+        if self._cupo_disponible + cantidad <= self._cupo_total:
+            self._cupo_disponible += cantidad
+        else:
+            raise ValueError("No se puede superar el cupo total")
+
     def __str__(self):
-        carrera_nombre = self._carrera.nombre_carrera if self._carrera else "Sin carrera"
-        sede_nombre = self._sede.nombre_sede if self._sede else "Sin sede"
+        fecha_ap = self._fecha_apertura.strftime("%Y-%m-%d") if self._fecha_apertura else "N/A"
+        fecha_cie = self._fecha_cierre.strftime("%Y-%m-%d") if self._fecha_cierre else "N/A"
         return (
-            f"[Oferta] Carrera: {carrera_nombre} - Sede: {sede_nombre} - "
-            f"Cupos: {self._cupos_ocupados}/{self._cupos_total} - "
-            f"Puntaje: {self.puntaje_minimo}-{self.puntaje_maximo} - "
-            f"Estado: {self.estado()}"
+            f"Oferta {self._carrera} ({self._modalidad}) - "
+            f"Cupo: {self._cupo_disponible}/{self._cupo_total} - "
+            f"Precio: ${self._precio} - "
+            f"Periodo: {fecha_ap} a {fecha_cie}"
         )

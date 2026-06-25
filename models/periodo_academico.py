@@ -1,45 +1,63 @@
-from datetime import date
-
+from datetime import date, datetime
 
 class PeriodoAcademico:
-    def __init__(self, fecha_inicio, fecha_fin, anio, semestre):
+    def __init__(self, id_periodo, nombre, fecha_inicio, fecha_fin, estado=True):
+        # Convierte cadenas a date automáticamente
+        if isinstance(fecha_inicio, str):
+            fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
+        if isinstance(fecha_fin, str):
+            fecha_fin = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+
         if fecha_inicio >= fecha_fin:
             raise ValueError("La fecha de inicio debe ser anterior a la fecha de fin.")
-        self.fecha_inicio = fecha_inicio
-        self.fecha_fin = fecha_fin
-        self.anio = anio
-        self.semestre = semestre
-        self.activo = False
 
-# Métodos:
+        self._id_periodo = id_periodo
+        self._nombre = nombre
+        self._fecha_inicio = fecha_inicio
+        self._fecha_fin = fecha_fin
+        self._estado = estado
+        self._oferta = None
+
+    @property
+    def id_periodo(self):
+        return self._id_periodo
+
+    @property
+    def nombre(self):
+        return self._nombre
+
+    @property
+    def fecha_inicio(self):
+        return self._fecha_inicio
+
+    @property
+    def fecha_fin(self):
+        return self._fecha_fin
+
+    @property
+    def estado(self):
+        return self._estado
+
+    @property
+    def oferta(self):
+        return self._oferta
+
+    def set_oferta(self, oferta):
+        self._oferta = oferta
 
     def activar_periodo(self):
-        if self.activo:
-            return f"El período '{self.semestre}' ya está activo."
-        self.activo = True
-        print(f"Periodo académico '{self.semestre} - {self.anio}' activado.")
-        return f"Período '{self.semestre}' activado exitosamente."
+        self._estado = True
 
     def culminar_periodo(self):
-        if not self.activo:
-            return f"El período '{self.semestre}' ya estaba inactivo."
-        self.activo = False
-        print(f"Periodo académico '{self.semestre} - {self.anio}' culminado.")
-        return f"Período '{self.semestre}' culminado exitosamente."
+        self._estado = False
 
     def duracion_periodo(self):
-        dias = (self.fecha_fin - self.fecha_inicio).days
-        print(f"Duración del período '{self.semestre}': {dias} días.")
-        return dias
+        return (self._fecha_fin - self._fecha_inicio).days
 
     def esta_activo(self):
         hoy = date.today()
-        rango = self.fecha_inicio <= hoy <= self.fecha_fin
-        return self.activo and rango
-    
+        return self._estado and self._fecha_inicio <= hoy <= self._fecha_fin
+
     def __str__(self):
-        estado = "Activo" if self.activo else "Inactivo"
-        return (
-            f"[PeriodoAcademico] {self.semestre} {self.anio} - "
-            f"{self.fecha_inicio} -> {self.fecha_fin} | Estado: {estado}"
-        )
+        estado = "Activo" if self._estado else "Inactivo"
+        return f"[PeriodoAcademico] {self._nombre} - {self._fecha_inicio} a {self._fecha_fin} | Estado: {estado}"

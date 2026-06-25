@@ -1,10 +1,10 @@
 # fachada_sistema.py
 
-from gestor_nivelacion import GestorNivelacion
-from sede import Sede
-from oferta import Oferta
-from periodo_academico import PeriodoAcademico
-from evaluacion import Evaluacion
+from logic.gestor_nivelacion import GestorNivelacion
+from models.sede import Sede
+from models.oferta import Oferta
+from models.periodo_academico import PeriodoAcademico
+from models.evaluacion import Evaluacion
 
 class SistemaFachada:
     """
@@ -13,9 +13,8 @@ class SistemaFachada:
     Mantiene la lógica existente del sistema.
     """
 
-    def __init__(self):
-        # Mantengo el gestor original tal como está
-        self._gestor = GestorNivelacion()
+    def __init__(self, nombre_institucion, admin):
+        self._gestor = GestorNivelacion(nombre_institucion, admin)
         self._sedes = []
         self._ofertas = []
         self._periodos = []
@@ -35,11 +34,13 @@ class SistemaFachada:
     # -------------------
     # OFERTA
     # -------------------
-    def crear_oferta(self, sede, id_oferta, carrera, modalidad, cupo, precio):
-        oferta = Oferta(id_oferta, carrera, modalidad, cupo, precio)
-        sede.agregar_oferta(oferta)
-        self._ofertas.append(oferta)
-        return oferta
+    def crear_oferta(self, sede, id_oferta, carrera, modalidad,
+                 cupo=30, precio=0, fecha_apertura=None, fecha_cierre=None):
+     oferta = Oferta(id_oferta, carrera, modalidad, cupo, precio,
+                    fecha_apertura, fecha_cierre)
+     sede.agregar_oferta(oferta)
+     self._ofertas.append(oferta)
+     return oferta
 
     def listar_ofertas(self):
         return self._ofertas

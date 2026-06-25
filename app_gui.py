@@ -26,10 +26,25 @@ from models.modalidad import Modalidad
 from models.periodo_academico import PeriodoAcademico
 from models.oferta import Oferta
 from logic.gestor_nivelacion import GestorNivelacion
-from Sistema_fachada import SistemaFachada
+from models.administrador import Administrador
+from models.Sistema_fachada import SistemaFachada
 
-# Crear instancia global de la fachada
-sistema = SistemaFachada()
+# Crear administrador por defecto
+admin_defecto = Administrador(
+    id=1,
+    nombre="Admin Default",
+    correo="admin@uleam.edu.ec",
+    contrasena="Admin123",
+    telefono="0000000000",
+    nivel_autoridad="Alto",
+    departamento_asignado="Nivelación"
+)
+
+# Inicializar la fachada con los parámetros requeridos
+sistema = SistemaFachada(
+    nombre_institucion="ULEAM - Campus Manta",
+    admin=admin_defecto
+)
 
 from datetime import date
 
@@ -2669,6 +2684,16 @@ class TabReportes(tk.Frame):
 
 
 # TAB 10 — RESUMEN
+
+
+    def _listar_reportes(self):
+        from tkinter import messagebox
+        reportes = sistema._gestor.listar_todos_reportes()
+        if not reportes:
+            messagebox.showinfo("Reportes", "No hay reportes generados todavía.")
+            return
+        info = "\n".join([str(rep) for rep in reportes])
+        messagebox.showinfo("Todos los reportes", info)
 
 class TabResumen(tk.Frame):
     def __init__(self, parent):
