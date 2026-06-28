@@ -56,6 +56,15 @@ class Sede:
             self._ofertas.append(oferta)
             oferta.set_sede(self)
 
+    def to_dict(self):
+        return {
+        "id_sede": self._id_sede,
+        "nombre_sede": self._nombre_sede,
+        "ciudad": self._ciudad,
+        "direccion": self._direccion,
+        "capacidad_total": self._capacidad_total,
+    }
+
     def __str__(self):
         return (
             f"[Sede] {self._nombre_sede} - Ciudad: {self._ciudad} - "
