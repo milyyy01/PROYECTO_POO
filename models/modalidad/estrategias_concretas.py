@@ -1,0 +1,33 @@
+from .estrategia import EstrategiaModalidad
+
+
+class EstrategiaPresencial(EstrategiaModalidad):
+    def descripcion(self) -> str:
+        return "Clase dictada en aula fisica."
+
+    def duracion_horas(self) -> int:
+        return 2
+
+
+class EstrategiaVirtual(EstrategiaModalidad):
+    def descripcion(self) -> str:
+        return "Clase dictada mediante plataforma virtual."
+
+    def duracion_horas(self) -> int:
+        return 1
+
+
+class EstrategiaHibrida(EstrategiaModalidad):
+    def descripcion(self) -> str:
+        return "Clase combinada entre encuentros presenciales y virtuales."
+
+    def duracion_horas(self) -> int:
+        return 3
+
+
+class EstrategiaSemipresencial(EstrategiaModalidad):
+    def descripcion(self) -> str:
+        return "Clase semipresencial con actividades presenciales y virtuales."
+
+    def duracion_horas(self) -> int:
+        return 2

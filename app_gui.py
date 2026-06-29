@@ -10,6 +10,13 @@ from io import StringIO
 import sys
 import json
 import csv
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+DATA_DIR.mkdir(exist_ok=True)
+DATOS_PATH = DATA_DIR / "datos.json"
+REPORTES_PATH = DATA_DIR / "reportes.json"
 
 # Modelos:
 from models import usuario
@@ -28,45 +35,6 @@ from models.oferta import Oferta
 from logic.gestor_nivelacion import GestorNivelacion
 from models.administrador import Administrador
 from models.Sistema_fachada import SistemaFachada
-
-# Crear administrador por defecto
-admin_defecto = Administrador(
-    id=1,
-    nombre="Admin Default",
-    correo="admin@uleam.edu.ec",
-    contrasena="Admin123",
-    telefono="0000000000",
-    nivel_autoridad="Alto",
-    departamento_asignado="Nivelación"
-)
-
-# Inicializar la fachada con los parámetros requeridos
-sistema = SistemaFachada(
-    nombre_institucion="ULEAM - Campus Manta",
-    admin=admin_defecto
-)
-
-from datetime import date
-
-def cargar_datos_iniciales():
-    # Crear sedes
-    sede1 = sistema.crear_sede(1, "Sede Matriz", "Guayaquil", "Av. Principal")
-    sede2 = sistema.crear_sede(2, "Sede Sur", "Guayaquil", "Av. Secundaria")
-
-    # Crear ofertas
-    oferta1 = sistema.crear_oferta(sede1, 101, "Ingeniería en Software", "Presencial", 30, 120)
-    oferta2 = sistema.crear_oferta(sede1, 102, "Ingeniería en Sistemas", "Presencial", 25, 110)
-
-    # Crear periodos
-    periodo1 = sistema.crear_periodo(oferta1, 201, "2026-I", date(2026, 4, 1), date(2026, 9, 30))
-    periodo2 = sistema.crear_periodo(oferta2, 202, "2026-II", date(2026, 10, 1), date(2027, 3, 31))
-
-    # Crear evaluaciones
-    eval1 = sistema.crear_evaluacion(301, "Examen Parcial", "Quiz", date(2026, 5, 15), 100)
-    eval2 = sistema.crear_evaluacion(302, "Proyecto Final", "Tarea", date(2026, 6, 30), 100)
-
-# Llamar esta función al inicio
-cargar_datos_iniciales()
 
 
 # UTILIDAD: capturar prints del sistema en la consola de la GUI
@@ -99,6 +67,7 @@ class ConsolaGUI:
 class EstadoSistema:
     def __init__(self):
         self.gestor: GestorNivelacion = None
+        self.sistema: SistemaFachada = None
         self.admin: Administrador = None
         self.admins: list = []
         self.usuario_actual = None
@@ -150,6 +119,7 @@ def guardar_datos():
                 "docente_id": p.docente.id if p.docente else None,
                 "asignatura_id": p.asignatura.id_asignatura if p.asignatura else None,
                 "sede_id": next((s.id_sede for s in estado.sedes if p in s._paralelos), None),
+                "estudiante_ids": [e.id for e in p.estudiantes],
                 "modalidad": {
                     "id_modalidad": p.modalidad.id_modalidad,
                     "tipo": p.modalidad.tipo,
@@ -165,15 +135,36 @@ def guardar_datos():
                 },
             }
             for p in estado.paralelos
-        ]
+        ],
+        "ofertas": [
+            {
+                "id_oferta": o.id_oferta,
+                "carrera_id": o.carrera.id_carrera if o.carrera else None,
+                "modalidad": {
+                    "id_modalidad": o.modalidad.id_modalidad,
+                    "tipo": o.modalidad.tipo,
+                    "descripcion": o.modalidad.descripcion,
+                    "duracion_horas": o.modalidad.duracion_horas,
+                },
+                "cupos_total": o.cupos_total,
+                "cupos_ocupados": o.cupos_ocupados,
+                "puntaje_minimo": o.puntaje_minimo,
+                "puntaje_maximo": o.puntaje_maximo,
+                "fecha_apertura": str(o.fecha_apertura) if o.fecha_apertura else None,
+                "fecha_cierre": str(o.fecha_cierre) if o.fecha_cierre else None,
+                "sede_id": o.sede.id_sede if o.sede else None,
+            }
+            for o in estado.ofertas
+        ],
     }
 
-    with open("datos.json", "w", encoding="utf-8") as archivo:
+    with DATOS_PATH.open("w", encoding="utf-8") as archivo:
         json.dump(datos, archivo, indent=4, ensure_ascii=False)
 
 def cargar_datos():
     try:
-        with open("datos.json", "r", encoding="utf-8") as archivo:
+        ruta_datos = DATOS_PATH if DATOS_PATH.exists() else BASE_DIR / "datos.json"
+        with ruta_datos.open("r", encoding="utf-8") as archivo:
             datos = json.load(archivo)
 
         # --- SEDES ---
@@ -208,6 +199,58 @@ def cargar_datos():
                 sede = next((s for s in estado.sedes if s.id_sede == sede_id), None)
                 if sede:
                     sede.agregar_carrera(carrera)
+
+        # --- OFERTAS ---
+        for o in datos.get("ofertas", []):
+            if any(of.id_oferta == o.get("id_oferta") for of in estado.ofertas):
+                continue
+            carrera = next((c for c in estado.carreras if c.id_carrera == o.get("carrera_id")), None)
+            sede = next((s for s in estado.sedes if s.id_sede == o.get("sede_id")), None)
+            modalidad_data = o.get("modalidad", "Presencial")
+            if isinstance(modalidad_data, dict):
+                modalidad = Modalidad.crear(
+                    id_modalidad=modalidad_data.get("id_modalidad", o.get("id_oferta")),
+                    tipo=modalidad_data.get("tipo", "Presencial"),
+                )
+            else:
+                modalidad = Modalidad.crear(
+                    id_modalidad=o.get("id_oferta"),
+                    tipo=modalidad_data or "Presencial",
+                )
+            oferta = Oferta(
+                id_oferta=o.get("id_oferta"),
+                carrera=carrera,
+                modalidad=modalidad,
+                cupos_total=int(o.get("cupos_total", 30)),
+                cupos_ocupados=int(o.get("cupos_ocupados", 0)),
+                puntaje_minimo=float(o.get("puntaje_minimo", 0)),
+                puntaje_maximo=float(o.get("puntaje_maximo", 1000)),
+                fecha_apertura=o.get("fecha_apertura"),
+                fecha_cierre=o.get("fecha_cierre"),
+                sede=sede,
+            )
+            if sede:
+                sede.agregar_oferta(oferta)
+            estado.ofertas.append(oferta)
+
+        if not datos.get("ofertas") and not estado.ofertas:
+            for indice, carrera in enumerate(estado.carreras, start=1):
+                sede = next((s for s in estado.sedes if carrera in s._carreras), None)
+                oferta = Oferta(
+                    id_oferta=indice,
+                    carrera=carrera,
+                    modalidad=Modalidad.crear(id_modalidad=indice, tipo="Presencial"),
+                    cupos_total=max(int(carrera.cupos_totales), 1),
+                    cupos_ocupados=0,
+                    puntaje_minimo=600,
+                    puntaje_maximo=1000,
+                    fecha_apertura=date.today(),
+                    fecha_cierre=date(date.today().year, 12, 31),
+                    sede=sede,
+                )
+                if sede:
+                    sede.agregar_oferta(oferta)
+                estado.ofertas.append(oferta)
 
         # --- DOCENTES (reconstruye y enlaza con su sede) ---
         for d in datos.get("docentes", []):
@@ -312,11 +355,9 @@ def cargar_datos():
                 continue
 
             modalidad_data = p.get("modalidad", {})
-            modalidad = Modalidad(
+            modalidad = Modalidad.crear(
                 id_modalidad=modalidad_data.get("id_modalidad", len(estado.modalidades) + 1),
                 tipo=modalidad_data.get("tipo", "Presencial"),
-                descripcion=modalidad_data.get("descripcion", "Modalidad del paralelo"),
-                duracion_horas=modalidad_data.get("duracion_horas", 2),
             )
 
             horario_data = p.get("horario", {})
@@ -340,6 +381,11 @@ def cargar_datos():
             sede = next((s for s in estado.sedes if s.id_sede == p.get("sede_id")), None)
             if sede:
                 sede.agregar_paralelo(paralelo)
+
+            for estudiante_id in p.get("estudiante_ids", []):
+                estudiante = next((e for e in estado.estudiantes if e.id == estudiante_id), None)
+                if estudiante:
+                    paralelo.agregar_estudiante(estudiante)
 
             estado.paralelos.append(paralelo)
             estado.modalidades.append(modalidad)
@@ -386,26 +432,28 @@ def iniciar_sistema_automatico():
     if estado.admin is None and estado.admins:
         estado.admin = estado.admins[0]
 
-    if estado.gestor is None:
-        estado.gestor = GestorNivelacion(
+    if estado.sistema is None:
+        estado.sistema = SistemaFachada(
             "ULEAM - Campus Manta",
-            estado.admin
+            estado.admin,
+            ruta_reportes=REPORTES_PATH
         )
+        estado.gestor = estado.sistema.gestor
 
     for sede in estado.sedes:
-        estado.gestor.registrar_sede(sede)
+        estado.sistema.registrar_sede(sede)
 
     for docente in estado.docentes:
-        estado.gestor.registrar_docente(docente)
+        estado.sistema.registrar_docente(docente)
 
     for estudiante in estado.estudiantes:
-        estado.gestor.registrar_estudiante(estudiante)
+        estado.sistema.registrar_estudiante(estudiante)
 
     for asignatura in estado.asignaturas:
-        estado.gestor.registrar_asignatura(asignatura)
+        estado.sistema.registrar_asignatura(asignatura)
 
     for paralelo in estado.paralelos:
-        estado.gestor.registrar_paralelo(paralelo)
+        estado.sistema.registrar_paralelo(paralelo)
 
 def iniciar_sesion(correo, contrasena):
     correo_ingresado = correo.strip().lower()
@@ -478,14 +526,14 @@ def importar_docentes_csv(ruta_archivo):
                         nivel=nivel,
                     )
 
-                    estado.gestor.registrar_docente(docente)
+                    estado.sistema.registrar_docente(docente)
 
                     sede = next((s for s in estado.sedes if s.nombre_sede == sede_nombre), None)
                     if sede:
-                        estado.gestor.asignar_sede_a_docente(docente, sede)
+                        estado.sistema.asignar_sede_a_docente(docente, sede)
 
                     if horas > 0:
-                        estado.gestor.asignar_carga_horaria(docente, horas)
+                        estado.sistema.asignar_carga_horaria(docente, horas)
 
                     estado.docentes.append(docente)
                     importados += 1
@@ -552,8 +600,73 @@ def importar_estudiantes_csv(ruta_archivo):
                         carrera=carrera,
                     )
 
-                    estado.gestor.registrar_estudiante(estudiante)
+                    estado.sistema.registrar_estudiante(estudiante)
                     estado.estudiantes.append(estudiante)
+                    importados += 1
+
+                except Exception as ex:
+                    errores.append(f"Fila {fila_num}: {ex}")
+
+        guardar_datos()
+        return importados, errores
+
+    except Exception as ex:
+        return 0, [str(ex)]
+
+
+def importar_matriculas_csv(ruta_archivo):
+    importados = 0
+    errores = []
+
+    try:
+        with open(ruta_archivo, "r", encoding="utf-8-sig", newline="") as archivo:
+            muestra = archivo.read(2048)
+            archivo.seek(0)
+            delimitador = ";" if muestra.count(";") > muestra.count(",") else ","
+            lector = csv.DictReader(archivo, delimiter=delimitador)
+
+            for fila_num, fila in enumerate(lector, start=2):
+                try:
+                    fila = {
+                        (clave or "").strip().lower(): (valor or "").strip()
+                        for clave, valor in fila.items()
+                    }
+                    estudiante_ref = (
+                        fila.get("estudiante", "")
+                        or fila.get("correo", "")
+                        or fila.get("id", "")
+                    )
+                    paralelo_ref = fila.get("paralelo", "")
+
+                    if not estudiante_ref or not paralelo_ref:
+                        errores.append(f"Fila {fila_num}: faltan estudiante/correo/id o paralelo.")
+                        continue
+
+                    estudiante = next(
+                        (
+                            e for e in estado.estudiantes
+                            if str(e.id) == estudiante_ref
+                            or e.correo.lower() == estudiante_ref.lower()
+                            or e.nombre.lower() == estudiante_ref.lower()
+                        ),
+                        None,
+                    )
+                    paralelo = next((p for p in estado.paralelos if p.codigo == paralelo_ref), None)
+
+                    if not estudiante:
+                        errores.append(f"Fila {fila_num}: no existe el estudiante '{estudiante_ref}'.")
+                        continue
+                    if not paralelo:
+                        errores.append(f"Fila {fila_num}: no existe el paralelo '{paralelo_ref}'.")
+                        continue
+                    if estudiante in paralelo.estudiantes:
+                        errores.append(f"Fila {fila_num}: estudiante ya matriculado en '{paralelo.codigo}'.")
+                        continue
+                    if paralelo.cupo_disponible <= 0:
+                        errores.append(f"Fila {fila_num}: paralelo '{paralelo.codigo}' sin cupos.")
+                        continue
+
+                    estado.sistema.asignar_estudiante_a_paralelo(estudiante, paralelo)
                     importados += 1
 
                 except Exception as ex:
@@ -1129,6 +1242,7 @@ class AppSIGEN(tk.Tk):
             self.tabs["Asignaturas"] = TabAsignaturas(self.contenido)
             self.tabs["Paralelos"] = TabParalelos(self.contenido)
             self.tabs["Matrícula"] = TabMatricula(self.contenido)
+            self.tabs["Carreras y Ofertas"] = TabCarrerasOfertas(self.contenido)
             self.tabs["Reportes"] = TabReportes(self.contenido)
             self.tabs["Resumen"] = TabResumen(self.contenido)
 
@@ -1330,7 +1444,7 @@ class TabInicio(tk.Frame):
         self._cards["Carreras"].config(text=str(len(estado.carreras)))
 
         texto_estado = (
-            f"Institución: {estado.gestor.nombre_institucion if estado.gestor else 'No iniciada'}\n"
+            f"Institución: {estado.sistema.nombre_institucion if estado.sistema else 'No iniciada'}\n"
             f"Administradores registrados: {len(estado.admins)}\n"
             f"Reportes disponibles: calificaciones, docentes y sedes\n"
             f"Estado: sistema cargado correctamente"
@@ -1396,7 +1510,7 @@ class TabSede(tk.Frame):
                 ciudad=self._entries["Ciudad"].get().strip(),
                 capacidad_total=int(self._entries["Capacidad total"].get()),
             )
-            estado.gestor.registrar_sede(sede)
+            estado.sistema.registrar_sede(sede)
             estado.sedes.append(sede)
             guardar_datos()
             self._lista.insert(tk.END, f"  {sede.nombre_sede} — {sede.ciudad} (cap. {sede.capacidad_total})")
@@ -1405,7 +1519,7 @@ class TabSede(tk.Frame):
             messagebox.showerror("Error", str(ex))
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
             return False
         return True
@@ -1532,18 +1646,18 @@ class TabDocentes(tk.Frame):
                 especialidad=valores["Especialidad"],
                 nivel=valores["Nivel"],
             )
-            estado.gestor.registrar_docente(docente)
+            estado.sistema.registrar_docente(docente)
 
             # Sede
             sede_sel = self._cb_sede.get()
             sede = next((s for s in estado.sedes if s.nombre_sede == sede_sel), None)
             if sede:
-                estado.gestor.asignar_sede_a_docente(docente, sede)
+                estado.sistema.asignar_sede_a_docente(docente, sede)
 
             # Horas
             horas = int(self._e_horas.get() or 0)
             if horas > 0:
-                estado.gestor.asignar_carga_horaria(docente, horas)
+                estado.sistema.asignar_carga_horaria(docente, horas)
 
             estado.docentes.append(docente)
             guardar_datos()
@@ -1557,9 +1671,10 @@ class TabDocentes(tk.Frame):
             return
 
         ruta = filedialog.askopenfilename(
-        title="Seleccionar archivo CSV de docentes",
-        filetypes=[("Archivos CSV", "*.csv")]
-    )
+            title="Seleccionar archivo CSV de docentes",
+            initialdir=DATA_DIR,
+            filetypes=[("Archivos CSV", "*.csv")]
+        )
 
         if not ruta:
             return
@@ -1575,7 +1690,7 @@ class TabDocentes(tk.Frame):
         messagebox.showinfo("Importación CSV", mensaje)
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
             return False
         return True
@@ -1725,7 +1840,7 @@ class TabEstudiantes(tk.Frame):
                 sede=sede,
                 carrera=carrera,
             )
-            estado.gestor.registrar_estudiante(est)
+            estado.sistema.registrar_estudiante(est)
             estado.estudiantes.append(est)
             guardar_datos()
             self.refrescar()
@@ -1739,6 +1854,7 @@ class TabEstudiantes(tk.Frame):
 
         ruta = filedialog.askopenfilename(
             title="Seleccionar archivo CSV de estudiantes",
+            initialdir=DATA_DIR,
             filetypes=[("Archivos CSV", "*.csv")]
         )
 
@@ -1756,7 +1872,7 @@ class TabEstudiantes(tk.Frame):
         messagebox.showinfo("Importación CSV", mensaje)
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
             return False
         return True
@@ -1902,14 +2018,14 @@ class TabAsignaturas(tk.Frame):
             docente_sel = self._cb_docente.get()
             docente = next((d for d in estado.docentes if d.nombre == docente_sel), None)
             if docente:
-                estado.gestor.asignar_docente_a_asignatura(docente, asig)
+                estado.sistema.asignar_docente_a_asignatura(docente, asig)
 
             carrera_sel = self._cb_carrera.get()
             carrera = next((c for c in estado.carreras if c.nombre_carrera == carrera_sel), None)
             if carrera:
                 carrera.agregar_asignatura(asig)
 
-            estado.gestor.registrar_asignatura(asig)
+            estado.sistema.registrar_asignatura(asig)
             estado.asignaturas.append(asig)
             guardar_datos()
             self.refrescar()
@@ -1918,7 +2034,7 @@ class TabAsignaturas(tk.Frame):
             messagebox.showerror("Error", str(ex))
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
             return False
         return True
@@ -2057,11 +2173,9 @@ class TabParalelos(tk.Frame):
                 messagebox.showwarning("Faltan datos", "Selecciona una asignatura.")
                 return
 
-            modalidad = Modalidad(
+            modalidad = Modalidad.crear(
                 id_modalidad=len(estado.paralelos)+1,
                 tipo=self._cb_modalidad.get(),
-                descripcion="Modalidad del paralelo",
-                duracion_horas=2,
             )
             horario = Horario(
                 id_horario=f"H{len(estado.paralelos)+1:03d}",
@@ -2078,7 +2192,7 @@ class TabParalelos(tk.Frame):
                 modalidad=modalidad,
                 asignatura=asignatura,
             )
-            estado.gestor.registrar_paralelo(paralelo)
+            estado.sistema.registrar_paralelo(paralelo)
 
             sede_sel = self._cb_sede.get()
             sede = next((s for s in estado.sedes if s.nombre_sede == sede_sel), None)
@@ -2095,7 +2209,7 @@ class TabParalelos(tk.Frame):
             messagebox.showerror("Error", str(ex))
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
             return False
         return True
@@ -2125,7 +2239,6 @@ class TabMatricula(tk.Frame):
     def _construir(self):
         lbl(self, "Matrícula de Estudiantes", bold=True, size=12).pack(pady=(16, 8))
 
-        # --- Sección: Matricular en paralelo ---
         f1 = frame(self)
         f1.pack(pady=4)
         lbl(f1, "Asignar a Paralelo", bold=True).grid(row=0, column=0, columnspan=2, pady=(0,8))
@@ -2142,84 +2255,198 @@ class TabMatricula(tk.Frame):
             row=3, column=0, columnspan=2, pady=10
         )
 
-        separador(self)
-
-        # --- Sección: Registrar carrera + oferta ---
-        lbl(self, "📋 Registrar Carrera y Oferta", bold=True).pack(pady=(4, 6))
-
-        f2 = frame(self)
-        f2.pack(pady=4)
-
-        lbl(f2, "ID Carrera").grid(row=0, column=0, sticky="w", pady=3)
-        self._e_id_car = entry(f2, width=10)
-        self._e_id_car.insert(0, "1")
-        self._e_id_car.grid(row=0, column=1, sticky="w", pady=3, padx=8)
-
-        lbl(f2, "Nombre carrera").grid(row=1, column=0, sticky="w", pady=3)
-        self._e_nom_car = entry(f2)
-        self._e_nom_car.insert(0, "Ingeniería en Sistemas")
-        self._e_nom_car.grid(row=1, column=1, pady=3, padx=8)
-
-        lbl(f2, "Facultad").grid(row=2, column=0, sticky="w", pady=3)
-        self._e_fac = entry(f2)
-        self._e_fac.insert(0, "Ciencias Informáticas")
-        self._e_fac.grid(row=2, column=1, pady=3, padx=8)
-
-        lbl(f2, "Cupos totales").grid(row=3, column=0, sticky="w", pady=3)
-        self._e_cupos_car = entry(f2, width=10)
-        self._e_cupos_car.insert(0, "40")
-        self._e_cupos_car.grid(row=3, column=1, sticky="w", pady=3, padx=8)
-
-        lbl(f2, "Puntaje mínimo").grid(row=4, column=0, sticky="w", pady=3)
-        self._e_pmin = entry(f2, width=10)
-        self._e_pmin.insert(0, "600")
-        self._e_pmin.grid(row=4, column=1, sticky="w", pady=3, padx=8)
-
-        lbl(f2, "Puntaje máximo").grid(row=5, column=0, sticky="w", pady=3)
-        self._e_pmax = entry(f2, width=10)
-        self._e_pmax.insert(0, "1000")
-        self._e_pmax.grid(row=5, column=1, sticky="w", pady=3, padx=8)
-
-        lbl(f2, "Sede").grid(row=6, column=0, sticky="w", pady=3)
-        self._cb_sede_car = combo(f2, [])
-        self._cb_sede_car.grid(row=6, column=1, pady=3, padx=8)
-
-        btn(f2, "➕ Crear Carrera y Oferta", self._crear_carrera_oferta,
-            color=COLORS["warning"]).grid(row=7, column=0, columnspan=2, pady=10)
+        btn(f1, "Importar matrículas CSV", self._importar_matriculas_csv, color=COLORS["warning"]).grid(
+            row=4, column=0, columnspan=2, pady=(0, 10)
+        )
 
         separador(self)
+        lbl(self, "Matrículas registradas", bold=True).pack()
 
-        # --- Sección: Matricular en carrera ---
-        lbl(self, "🎓 Inscribir en Carrera vía Oferta", bold=True).pack(pady=(4, 6))
-        f3 = frame(self)
-        f3.pack(pady=4)
-
-        lbl(f3, "Estudiante").grid(row=0, column=0, sticky="w", pady=3)
-        self._cb_est_car = combo(f3, [])
-        self._cb_est_car.grid(row=0, column=1, pady=3, padx=8)
-
-        lbl(f3, "Puntaje obtenido").grid(row=1, column=0, sticky="w", pady=3)
-        self._e_puntaje = entry(f3, width=10)
-        self._e_puntaje.insert(0, "750")
-        self._e_puntaje.grid(row=1, column=1, sticky="w", pady=3, padx=8)
-
-        btn(f3, "✅ Inscribir en Carrera", self._matricular_carrera,
-            color=COLORS["success"]).grid(row=2, column=0, columnspan=2, pady=10)
+        columnas = ("estudiante", "carrera", "paralelo", "materia")
+        self._tabla_matriculas = ttk.Treeview(
+            self,
+            columns=columnas,
+            show="headings",
+            height=7,
+            style="TablaSIGEN.Treeview",
+        )
+        for col, titulo in zip(columnas, ("Estudiante", "Carrera", "Paralelo", "Materia")):
+            self._tabla_matriculas.heading(col, text=titulo)
+            self._tabla_matriculas.column(col, width=160, anchor="w")
+        self._tabla_matriculas.pack(fill="x", padx=20, pady=6)
+        self._tabla_matriculas.tag_configure(
+            "fila_par",
+            background=COLORS["bg"],
+            foreground=COLORS["text"],
+        )
+        self._tabla_matriculas.tag_configure(
+            "fila_impar",
+            background=COLORS["surface"],
+            foreground=COLORS["text"],
+        )
 
     def _matricular_paralelo(self):
         if not self._validar_sistema(): return
         try:
             est_n = self._cb_est_par.get()
-            par_c = self._cb_par.get()
             est = next((e for e in estado.estudiantes if e.nombre == est_n), None)
-            par = next((p for p in estado.paralelos if p.codigo == par_c), None)
+            par = self._paralelo_seleccionado()
             if not est or not par:
                 messagebox.showwarning("Faltan datos", "Selecciona estudiante y paralelo.")
                 return
-            estado.gestor.asignar_estudiante_a_paralelo(est, par)
+            if not messagebox.askyesno("Confirmar matrícula", "¿Estás seguro de realizar esta acción?"):
+                return
+            estado.sistema.asignar_estudiante_a_paralelo(est, par)
+            guardar_datos()
+            self.refrescar()
+            self._limpiar_seleccion()
             messagebox.showinfo("OK", f"'{est.nombre}' matriculado en paralelo '{par.codigo}'.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
+
+    def _texto_paralelo(self, paralelo):
+        materia = paralelo.asignatura.nombre if paralelo.asignatura else "Sin asignatura"
+        return f"{paralelo.codigo} | {materia} | Cupos {paralelo.cupo_disponible}/{paralelo.capacidad}"
+
+    def _paralelo_seleccionado(self):
+        seleccion = self._cb_par.get()
+        for texto, paralelo in getattr(self, "_opciones_paralelo", []):
+            if texto == seleccion:
+                return paralelo
+        return next((p for p in estado.paralelos if p.codigo == seleccion), None)
+
+    def _importar_matriculas_csv(self):
+        if not self._validar_sistema(): return
+        if not messagebox.askyesno("Confirmar matrícula", "¿Estás seguro de realizar esta acción?"):
+            return
+        ruta = filedialog.askopenfilename(
+            title="Seleccionar archivo CSV de matrículas",
+            initialdir=DATA_DIR,
+            filetypes=[("Archivos CSV", "*.csv")]
+        )
+        if not ruta:
+            return
+        importados, errores = importar_matriculas_csv(ruta)
+        self.refrescar()
+        mensaje = f"Matrículas importadas: {importados}"
+        if errores:
+            mensaje += "\n\nErrores:\n" + "\n".join(errores[:10])
+        messagebox.showinfo("Importación CSV", mensaje)
+
+    def _limpiar_seleccion(self):
+        self._cb_est_par.set("")
+        self._cb_par.set("")
+
+    def _validar_sistema(self):
+        if not estado.sistema:
+            messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
+            return False
+        return True
+
+    def refrescar(self):
+        self._cb_est_par["values"] = [e.nombre for e in estado.estudiantes]
+        self._opciones_paralelo = [(self._texto_paralelo(p), p) for p in estado.paralelos]
+        self._cb_par["values"] = [texto for texto, _ in self._opciones_paralelo]
+        self._tabla_matriculas.delete(*self._tabla_matriculas.get_children())
+        fila = 0
+        for paralelo in estado.paralelos:
+            materia = paralelo.asignatura.nombre if paralelo.asignatura else "Sin asignatura"
+            for estudiante in paralelo.estudiantes:
+                carrera = estudiante.carrera.nombre_carrera if estudiante.carrera else "Sin carrera"
+                etiqueta = "fila_par" if fila % 2 == 0 else "fila_impar"
+                self._tabla_matriculas.insert(
+                    "",
+                    tk.END,
+                    values=(estudiante.nombre, carrera, paralelo.codigo, materia),
+                    tags=(etiqueta,),
+                )
+                fila += 1
+
+
+class TabCarrerasOfertas(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg=COLORS["bg"])
+        self._construir()
+
+    def _construir(self):
+        lbl(self, "Carreras y Ofertas", bold=True, size=12).pack(pady=(16, 8))
+
+        lbl(self, "📋 Registrar Carrera y Oferta", bold=True).pack(pady=(4, 6))
+        f1 = frame(self)
+        f1.pack(pady=4)
+
+        lbl(f1, "ID Carrera").grid(row=0, column=0, sticky="w", pady=3)
+        self._e_id_car = entry(f1, width=10)
+        self._e_id_car.insert(0, "1")
+        self._e_id_car.grid(row=0, column=1, sticky="w", pady=3, padx=8)
+
+        lbl(f1, "Nombre de la carrera").grid(row=1, column=0, sticky="w", pady=3)
+        self._e_nom_car = entry(f1)
+        self._e_nom_car.insert(0, "Ingeniería en Sistemas")
+        self._e_nom_car.grid(row=1, column=1, pady=3, padx=8)
+
+        lbl(f1, "Facultad").grid(row=2, column=0, sticky="w", pady=3)
+        self._e_fac = entry(f1)
+        self._e_fac.insert(0, "Ciencias Informáticas")
+        self._e_fac.grid(row=2, column=1, pady=3, padx=8)
+
+        lbl(f1, "Cupos totales").grid(row=3, column=0, sticky="w", pady=3)
+        self._e_cupos_car = entry(f1, width=10)
+        self._e_cupos_car.insert(0, "40")
+        self._e_cupos_car.grid(row=3, column=1, sticky="w", pady=3, padx=8)
+
+        lbl(f1, "Puntaje mínimo").grid(row=4, column=0, sticky="w", pady=3)
+        self._e_pmin = entry(f1, width=10)
+        self._e_pmin.insert(0, "600")
+        self._e_pmin.grid(row=4, column=1, sticky="w", pady=3, padx=8)
+
+        lbl(f1, "Puntaje máximo").grid(row=5, column=0, sticky="w", pady=3)
+        self._e_pmax = entry(f1, width=10)
+        self._e_pmax.insert(0, "1000")
+        self._e_pmax.grid(row=5, column=1, sticky="w", pady=3, padx=8)
+
+        lbl(f1, "Modalidad").grid(row=6, column=0, sticky="w", pady=3)
+        self._cb_modalidad_car = combo(f1, ["Presencial", "Virtual", "Híbrida", "Semipresencial"])
+        self._cb_modalidad_car.current(0)
+        self._cb_modalidad_car.grid(row=6, column=1, pady=3, padx=8)
+
+        lbl(f1, "Sede").grid(row=7, column=0, sticky="w", pady=3)
+        self._cb_sede_car = combo(f1, [])
+        self._cb_sede_car.grid(row=7, column=1, pady=3, padx=8)
+
+        btn(
+            f1,
+            "➕ Crear Carrera y Oferta",
+            self._crear_carrera_oferta,
+            color=COLORS["warning"],
+        ).grid(row=8, column=0, columnspan=2, pady=10)
+
+        separador(self)
+
+        lbl(self, "🎓 Inscribir en Carrera vía Oferta", bold=True).pack(pady=(4, 6))
+        f2 = frame(self)
+        f2.pack(pady=4)
+
+        lbl(f2, "Estudiante").grid(row=0, column=0, sticky="w", pady=3)
+        self._cb_est_car = combo(f2, [])
+        self._cb_est_car.grid(row=0, column=1, pady=3, padx=8)
+
+        lbl(f2, "Oferta").grid(row=1, column=0, sticky="w", pady=3)
+        self._cb_oferta_car = combo(f2, [])
+        self._cb_oferta_car.grid(row=1, column=1, pady=3, padx=8)
+        self._ofertas_por_etiqueta = {}
+
+        lbl(f2, "Puntaje obtenido").grid(row=2, column=0, sticky="w", pady=3)
+        self._e_puntaje = entry(f2, width=10)
+        self._e_puntaje.insert(0, "750")
+        self._e_puntaje.grid(row=2, column=1, sticky="w", pady=3, padx=8)
+
+        btn(
+            f2,
+            "✅ Inscribir en Carrera",
+            self._matricular_carrera,
+            color=COLORS["success"],
+        ).grid(row=3, column=0, columnspan=2, pady=10)
 
     def _crear_carrera_oferta(self):
         if not self._validar_sistema(): return
@@ -2239,6 +2466,10 @@ class TabMatricula(tk.Frame):
             oferta = Oferta(
                 cupos_total=int(self._e_cupos_car.get()),
                 cupos_ocupados=0,
+                modalidad=Modalidad.crear(
+                    id_modalidad=carrera.id_carrera,
+                    tipo=self._cb_modalidad_car.get(),
+                ),
                 puntaje_minimo=float(self._e_pmin.get()),
                 puntaje_maximo=float(self._e_pmax.get()),
                 fecha_apertura=date.today(),
@@ -2250,6 +2481,8 @@ class TabMatricula(tk.Frame):
                 sede.agregar_oferta(oferta)
             estado.carreras.append(carrera)
             estado.ofertas.append(oferta)
+            guardar_datos()
+            self.refrescar()
             messagebox.showinfo("OK", f"Carrera '{carrera.nombre_carrera}' y oferta creadas.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
@@ -2265,24 +2498,43 @@ class TabMatricula(tk.Frame):
             if not est:
                 messagebox.showwarning("Faltan datos", "Selecciona un estudiante.")
                 return
+            etiqueta_oferta = self._cb_oferta_car.get()
+            oferta = self._ofertas_por_etiqueta.get(etiqueta_oferta)
+            if not oferta:
+                messagebox.showwarning("Faltan datos", "Selecciona una oferta.")
+                return
+            if not messagebox.askyesno("Confirmar matrícula", "¿Estás seguro de realizar esta acción?"):
+                return
             puntaje = float(self._e_puntaje.get())
-            oferta = estado.ofertas[-1]
-            estado.gestor.matricular_en_carrera(est, oferta, puntaje)
+            estado.sistema.matricular_en_carrera(est, oferta, puntaje)
+            guardar_datos()
             messagebox.showinfo("OK", f"Inscripción procesada para '{est.nombre}'.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
             return False
         return True
 
     def refrescar(self):
-        self._cb_est_par["values"] = [e.nombre for e in estado.estudiantes]
-        self._cb_par["values"] = [p.codigo for p in estado.paralelos]
         self._cb_est_car["values"] = [e.nombre for e in estado.estudiantes]
         self._cb_sede_car["values"] = [s.nombre_sede for s in estado.sedes]
+
+        self._ofertas_por_etiqueta = {
+            self._etiqueta_oferta(o): o for o in estado.ofertas
+        }
+        self._cb_oferta_car["values"] = list(self._ofertas_por_etiqueta.keys())
+
+    @staticmethod
+    def _etiqueta_oferta(oferta):
+        nombre_carrera = oferta.carrera.nombre_carrera if oferta.carrera else "Sin carrera"
+        tipo_modalidad = oferta.modalidad.tipo if oferta.modalidad else "Sin modalidad"
+        return (
+            f"#{oferta.id_oferta} - {nombre_carrera} - {tipo_modalidad} "
+            f"(cupos: {oferta.cupo_disponible}/{oferta.cupos_total})"
+        )
 
 
 # TAB 8 — CALIFICAR
@@ -2426,7 +2678,7 @@ class TabCalificar(tk.Frame):
                 )
                 return
 
-            estado.gestor.calificar_estudiante(
+            estado.sistema.calificar_estudiante(
                 docente,
                 estudiante,
                 asignatura,
@@ -2469,7 +2721,7 @@ class TabCalificar(tk.Frame):
             messagebox.showwarning("Usuario", "Esta opción solo es para estudiantes.")
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema.")
             return False
         return True
@@ -2598,7 +2850,7 @@ class TabReportes(tk.Frame):
         estudiante = estado.usuario_actual
 
         if isinstance(estudiante, Estudiante):
-            reporte = estado.gestor.generar_reporte_calificaciones(estudiante)
+            reporte = estado.sistema.generar_reporte_calificaciones(estudiante)
             mostrar_texto("Reporte de calificaciones", reporte.contenido_completo)
         else:
             messagebox.showwarning("Usuario", "Esta opción solo es para estudiantes.")
@@ -2610,7 +2862,7 @@ class TabReportes(tk.Frame):
         docente = estado.usuario_actual
 
         if isinstance(docente, Docente):
-            reporte = estado.gestor.generar_reporte_docente(docente)
+            reporte = estado.sistema.generar_reporte_docente(docente)
             mostrar_texto("Reporte de docente", reporte.contenido_completo)
         else:
             messagebox.showwarning("Usuario", "Esta opción solo es para docentes.")
@@ -2626,7 +2878,7 @@ class TabReportes(tk.Frame):
             messagebox.showwarning("Faltan datos", "Selecciona un estudiante.")
             return
 
-        reporte = estado.gestor.generar_reporte_calificaciones(est)
+        reporte = estado.sistema.generar_reporte_calificaciones(est)
         mostrar_texto("Reporte de calificaciones", reporte.contenido_completo)
 
     def _rep_docente(self):
@@ -2640,7 +2892,7 @@ class TabReportes(tk.Frame):
             messagebox.showwarning("Faltan datos", "Selecciona un docente.")
             return
 
-        reporte = estado.gestor.generar_reporte_docente(doc)
+        reporte = estado.sistema.generar_reporte_docente(doc)
         mostrar_texto("Reporte de docente", reporte.contenido_completo)
 
     def _rep_sede(self):
@@ -2654,17 +2906,22 @@ class TabReportes(tk.Frame):
             messagebox.showwarning("Faltan datos", "Selecciona una sede.")
             return
 
-        reporte = estado.gestor.generar_reporte_sede(sede)
+        reporte = estado.sistema.generar_reporte_sede(sede)
         mostrar_texto("Reporte de sede", reporte.contenido_completo)
 
     def _listar(self):
         if not self._validar_sistema():
             return
 
-        estado.gestor.listar_todos_reportes()
+        reportes = estado.sistema.listar_todos_reportes()
+        if not reportes:
+            messagebox.showinfo("Reportes", "No hay reportes generados todavía.")
+            return
+        resumen = "\n".join(f"{i}. {reporte}" for i, reporte in enumerate(reportes, start=1))
+        mostrar_texto("Reportes generados", resumen)
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema.")
             return False
         return True
@@ -2685,15 +2942,6 @@ class TabReportes(tk.Frame):
 
 # TAB 10 — RESUMEN
 
-
-    def _listar_reportes(self):
-        from tkinter import messagebox
-        reportes = sistema._gestor.listar_todos_reportes()
-        if not reportes:
-            messagebox.showinfo("Reportes", "No hay reportes generados todavía.")
-            return
-        info = "\n".join([str(rep) for rep in reportes])
-        messagebox.showinfo("Todos los reportes", info)
 
 class TabResumen(tk.Frame):
     def __init__(self, parent):
@@ -2836,7 +3084,7 @@ class TabResumen(tk.Frame):
         docente = estado.usuario_actual
 
         if isinstance(docente, Docente):
-            reporte = estado.gestor.generar_reporte_docente(docente)
+            reporte = estado.sistema.generar_reporte_docente(docente)
             mostrar_texto("Reporte de docente", reporte.contenido_completo)
 
     def _actualizar(self):
@@ -2854,7 +3102,7 @@ class TabResumen(tk.Frame):
         if not self._validar_sistema():
             return
 
-        estado.gestor.resumen_sistema()
+        estado.sistema.resumen_sistema()
 
     def _cerrar_periodo(self):
         if not self._validar_sistema():
@@ -2865,11 +3113,11 @@ class TabResumen(tk.Frame):
             return
 
         periodo = estado.periodos[-1]
-        estado.gestor.cerrar_periodo(periodo)
+        estado.sistema.cerrar_periodo(periodo)
         messagebox.showinfo("OK", f"Periodo '{periodo.semestre}' cerrado.")
 
     def _validar_sistema(self):
-        if not estado.gestor:
+        if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema.")
             return False
         return True
@@ -2883,9 +3131,13 @@ class TabResumen(tk.Frame):
 
 # ENTRY POINT
 
-if __name__ == "__main__":
+def main():
     cargar_datos()
     iniciar_sistema_automatico()
 
     login = LoginWindow()
     login.mainloop()
+
+
+if __name__ == "__main__":
+    main()

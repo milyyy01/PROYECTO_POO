@@ -58,11 +58,11 @@ class Sede:
 
     def to_dict(self):
         return {
-        "id_sede": self._id_sede,
-        "nombre_sede": self._nombre_sede,
-        "ciudad": self._ciudad,
-        "direccion": self._direccion,
-        "capacidad_total": self._capacidad_total,
+            "id_sede": self._id_sede,
+            "nombre_sede": self._nombre_sede,
+            "ciudad": self._ciudad,
+            "direccion": self._direccion,
+            "capacidad_total": self._capacidad_total,
     }
 
     def __str__(self):

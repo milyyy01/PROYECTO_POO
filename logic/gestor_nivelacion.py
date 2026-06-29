@@ -20,16 +20,21 @@ from models.horario import Horario
 from models.modalidad import Modalidad
 from models.periodo_academico import PeriodoAcademico
 from models.oferta import Oferta
-from models.Reporte import (
+from models.reportes import (
     Reporte,
     IReporteBuilder,
     ReporteAcademicoBuilder,
+    ReporteDocenteBuilder,
+    ReporteSedeBuilder,
     DirectorReportes,
+    ReporteStorage,
 )
 
-from reports.reporte_calificaciones import obtener_datos_calificaciones
-from reports.reporte_docente import obtener_datos_docente
-from reports.reporte_sede import obtener_datos_sede
+from models.reportes.datos_reportes import (
+    obtener_datos_calificaciones,
+    obtener_datos_docente,
+    obtener_datos_sede,
+)
 
 
 # I — INTERFACES ESPECÍFICAS (Interface Segregation)
@@ -84,83 +89,6 @@ class IGestorReportes(ABC):
 
     @abstractmethod
     def generar_reporte_docente(self, docente: Docente) -> Reporte: ...
-
-
-# O + L — NUEVOS BUILDERS (Open/Closed + Liskov)
-# Se extiende el sistema de reportes SIN modificar IReporteBuilder ni
-# ReporteAcademicoBuilder. Cada builder concreto es sustituible.
-class ReporteDocenteBuilder(IReporteBuilder):
-    """
-    Builder concreto para reportes de docentes.
-    Abierto para uso sin tocar el builder académico existente.
-    """
-
-    def __init__(self):
-        self._reporte: Optional[Reporte] = None
-
-    def reset(self, tipo_reporte: str) -> None:
-        self._reporte = Reporte(tipo_reporte)
-
-    def construir_encabezado(self, titulo: str, autor: str) -> None:
-        self._reporte.encabezado = (
-            f"UNIVERSIDAD LAICA ELOY ALFARO DE MANABÍ (ULEAM)\n"
-            f"SISTEMA DE GESTIÓN DE NIVELACIÓN (SIGEN)\n"
-            f"REPORTE DE DOCENTE\n"
-            f"TÍTULO   : {titulo}\n"
-            f"DOCENTE  : {autor}\n"
-            f"{'-' * 40}"
-        )
-
-    def construir_cuerpo(self, datos: list) -> None:
-        cuerpo_str = "\n".join([f"  >> {dato}" for dato in datos])
-        self._reporte.cuerpo = f"INFORMACIÓN DEL DOCENTE:\n{cuerpo_str}\n"
-
-    def construir_pie_pagina(self) -> None:
-        self._reporte.pie_pagina = (
-            f"{'-' * 40}\n"
-            f"Reporte generado automáticamente por SIGEN.\n"
-            f"Uso interno del departamento académico."
-        )
-
-    def obtener_resultado(self) -> Reporte:
-        producto = self._reporte
-        self._reporte = None
-        return producto
-
-
-class ReporteSedeBuilder(IReporteBuilder):
-    """Builder concreto para reportes de sede."""
-
-    def __init__(self):
-        self._reporte: Optional[Reporte] = None
-
-    def reset(self, tipo_reporte: str) -> None:
-        self._reporte = Reporte(tipo_reporte)
-
-    def construir_encabezado(self, titulo: str, autor: str) -> None:
-        self._reporte.encabezado = (
-            f"UNIVERSIDAD LAICA ELOY ALFARO DE MANABÍ (ULEAM)\n"
-            f"SISTEMA DE GESTIÓN DE NIVELACIÓN (SIGEN)\n"
-            f"REPORTE DE SEDE\n"
-            f"TÍTULO : {titulo}\n"
-            f"SEDE   : {autor}\n"
-            f"{'-' * 40}"
-        )
-
-    def construir_cuerpo(self, datos: list) -> None:
-        cuerpo_str = "\n".join([f"  >> {dato}" for dato in datos])
-        self._reporte.cuerpo = f"DETALLE DE SEDE:\n{cuerpo_str}\n"
-
-    def construir_pie_pagina(self) -> None:
-        self._reporte.pie_pagina = (
-            f"{'-' * 40}\n"
-            f"Reporte de sede generado por SIGEN."
-        )
-
-    def obtener_resultado(self) -> Reporte:
-        producto = self._reporte
-        self._reporte = None
-        return producto
 
 
 # S — REPOSITORIOS (Single Responsibility)
@@ -357,9 +285,10 @@ class GestorReportes(IGestorReportes):
     Depende de la abstracción IReporteBuilder (D de SOLID).
     """
 
-    def __init__(self):
+    def __init__(self, ruta_reportes=None):
         self._director = DirectorReportes()
-        self._reportes_generados: List[Reporte] = []
+        self._storage = ReporteStorage(ruta_reportes) if ruta_reportes else None
+        self._reportes_generados: List[Reporte] = self._storage.cargar() if self._storage else []
 
     def _construir(
         self,
@@ -377,6 +306,8 @@ class GestorReportes(IGestorReportes):
         builder.construir_pie_pagina()
         reporte = builder.obtener_resultado()
         self._reportes_generados.append(reporte)
+        if self._storage:
+            self._storage.guardar(self._reportes_generados)
         return reporte
 
     def generar_reporte_calificaciones(self, estudiante: Estudiante) -> Reporte:
@@ -415,35 +346,27 @@ class GestorReportes(IGestorReportes):
             datos=datos,
         )
 
-    def listar_reportes(self) -> None:
+    def listar_reportes(self) -> List[Reporte]:
         if not self._reportes_generados:
             print("[Reportes] No hay reportes generados.")
-            return
+            return []
         print(f"\n{'=' * 40}")
         print(f"  REPORTES GENERADOS ({len(self._reportes_generados)})")
         print(f"{'=' * 40}")
         for i, r in enumerate(self._reportes_generados, 1):
             print(f"  {i}. {r}")
+        return list(self._reportes_generados)
 
 
-# FACHADA PRINCIPAL — GestorNivelacion
+# FACHADA — GestorNivelacion
 # Implementa las interfaces IGestorEstudiantes, IGestorDocentes,
 # IGestorAcademico, IGestorReportes.
 # Depende de abstracciones (D de SOLID).
 
 class GestorNivelacion(IGestorEstudiantes, IGestorDocentes, IGestorAcademico, IGestorReportes):
-    """
-    Punto de entrada principal del sistema SIGEN.
 
-    Principios aplicados:
-      S - Delega responsabilidades a servicios y repositorios especializados.
-      O - Nuevos builders/servicios se añaden sin modificar esta clase.
-      L - Implementa correctamente todas las interfaces que hereda.
-      I - Las interfaces que implementa son pequeñas y específicas.
-      D - Depende de IGestorReportes, no de GestorReportes directamente.
-    """
 
-    def __init__(self, nombre_institucion: str, admin: Administrador):
+    def __init__(self, nombre_institucion: str, admin: Administrador, ruta_reportes=None):
         self.nombre_institucion = nombre_institucion
         self._admin = admin
 
@@ -459,7 +382,7 @@ class GestorNivelacion(IGestorEstudiantes, IGestorDocentes, IGestorAcademico, IG
         )
         self._svc_calificaciones = ServicioCalificaciones()
         self._svc_asignacion = ServicioAsignacion(admin)
-        self._gestor_reportes: IGestorReportes = GestorReportes()
+        self._gestor_reportes: IGestorReportes = GestorReportes(ruta_reportes)
 
         # Sedes y periodos
         self._sedes: List[Sede] = []
@@ -588,8 +511,8 @@ class GestorNivelacion(IGestorEstudiantes, IGestorDocentes, IGestorAcademico, IG
         reporte.visualizar_reporte()
         return reporte
 
-    def listar_todos_reportes(self) -> None:
-        self._gestor_reportes.listar_reportes()
+    def listar_todos_reportes(self) -> List[Reporte]:
+        return self._gestor_reportes.listar_reportes()
 
     def resumen_sistema(self) -> None:
         print(f"\n{'=' * 50}")

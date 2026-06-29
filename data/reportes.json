@@ -1,0 +1,90 @@
+[
+    {
+        "tipo_reporte": "Académico - Calificaciones",
+        "fecha_generacion": "2026-06-28T18:58:21.473733",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nTITULO: Historial de Calificaciones\nSOLICITADO POR: Emily Olmedo\n----------------------------------------",
+        "cuerpo": "DETALLE DE REGISTROS:\n -> Base de Datos: 8.50 -> Aprobado\n -> Programación OO: 9.50 -> Aprobado\n -> Promedio general: 9.00\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Docente - Perfil",
+        "fecha_generacion": "2026-06-28T18:58:24.041556",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE DOCENTE\nTITULO  : Perfil del Docente\nDOCENTE : Juan Perez\n----------------------------------------",
+        "cuerpo": "INFORMACION DEL DOCENTE:\n >> Titulo       : Magister en Software\n >> Especialidad : Bases de Datos\n >> Nivel        : Senior\n >> Horas asign. : 12\n >> Sede         : Sede Manta\n >> Materias     : 0\n >> Paralelos    : 1\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Académico - Calificaciones",
+        "fecha_generacion": "2026-06-28T19:25:36.326558",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nTITULO: Historial de Calificaciones\nSOLICITADO POR: Emily Olmedo\n----------------------------------------",
+        "cuerpo": "DETALLE DE REGISTROS:\n -> Base de Datos: 8.50 -> Aprobado\n -> Programación OO: 9.50 -> Aprobado\n -> Promedio general: 9.00\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Académico - Calificaciones",
+        "fecha_generacion": "2026-06-28T19:25:38.397621",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nTITULO: Historial de Calificaciones\nSOLICITADO POR: Emily Olmedo\n----------------------------------------",
+        "cuerpo": "DETALLE DE REGISTROS:\n -> Base de Datos: 8.50 -> Aprobado\n -> Programación OO: 9.50 -> Aprobado\n -> Promedio general: 9.00\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Docente - Perfil",
+        "fecha_generacion": "2026-06-28T19:25:40.086667",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE DOCENTE\nTITULO  : Perfil del Docente\nDOCENTE : Juan Cedeño\n----------------------------------------",
+        "cuerpo": "INFORMACION DEL DOCENTE:\n >> Titulo       : Ing. en Software\n >> Especialidad : Base de Datos\n >> Nivel        : Senior\n >> Horas asign. : 20\n >> Sede         : Sede Manta\n >> Materias     : 1\n >> Paralelos    : 1\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Sede - Resumen",
+        "fecha_generacion": "2026-06-28T19:25:43.262468",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE SEDE\nTITULO : Resumen de Sede\nSEDE   : Sede Manta\n----------------------------------------",
+        "cuerpo": "DETALLE DE SEDE:\n >> Ciudad       : Manta\n >> Direccion    : Av. Universitaria s/n\n >> Capacidad    : 500\n >> Paralelos    : 2\n >> Carreras     : 1\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Académico - Calificaciones",
+        "fecha_generacion": "2026-06-28T19:28:06.309705",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nTITULO: Historial de Calificaciones\nSOLICITADO POR: Diana Vera\n----------------------------------------",
+        "cuerpo": "DETALLE DE REGISTROS:\n -> Sin calificaciones registradas.\n -> Promedio general: 0.00\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Académico - Calificaciones",
+        "fecha_generacion": "2026-06-28T19:31:51.860087",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nTITULO: Historial de Calificaciones\nSOLICITADO POR: Carlos Lopez\n----------------------------------------",
+        "cuerpo": "DETALLE DE REGISTROS:\n -> Sin calificaciones registradas.\n -> Promedio general: 0.00\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Académico - Calificaciones",
+        "fecha_generacion": "2026-06-28T19:33:38.211287",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nTITULO: Historial de Calificaciones\nSOLICITADO POR: Paola Mendoza\n----------------------------------------",
+        "cuerpo": "DETALLE DE REGISTROS:\n -> Sin calificaciones registradas.\n -> Promedio general: 0.00\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Docente - Perfil",
+        "fecha_generacion": "2026-06-28T19:34:29.749133",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE DOCENTE\nTITULO  : Perfil del Docente\nDOCENTE : Juan Perez\n----------------------------------------",
+        "cuerpo": "INFORMACION DEL DOCENTE:\n >> Titulo       : Magister en Software\n >> Especialidad : Bases de Datos\n >> Nivel        : Senior\n >> Horas asign. : 12\n >> Sede         : Sede Manta\n >> Materias     : 0\n >> Paralelos    : 0\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Docente - Perfil",
+        "fecha_generacion": "2026-06-28T19:35:58.095525",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE DOCENTE\nTITULO  : Perfil del Docente\nDOCENTE : Juan Perez\n----------------------------------------",
+        "cuerpo": "INFORMACION DEL DOCENTE:\n >> Titulo       : Magister en Software\n >> Especialidad : Bases de Datos\n >> Nivel        : Senior\n >> Horas asign. : 12\n >> Sede         : Sede Manta\n >> Materias     : 0\n >> Paralelos    : 0\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    }
+]

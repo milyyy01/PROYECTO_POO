@@ -3,15 +3,15 @@
         {
             "id_sede": 1,
             "nombre_sede": "Sede Manta",
-            "direccion": "Av. Universitaria s/n",
             "ciudad": "Manta",
+            "direccion": "Av. Universitaria s/n",
             "capacidad_total": 500
         },
         {
             "id_sede": 2,
             "nombre_sede": "Sede Chone",
-            "direccion": "Av. Chone",
             "ciudad": "Chone",
+            "direccion": "Av. Chone",
             "capacidad_total": 500
         }
     ],
@@ -78,7 +78,7 @@
             "nombre": "María García",
             "correo": "mgarcia@est.uleam.edu.ec",
             "telefono": "0961234567",
-            "fecha_matricula": "2026-06-15",
+            "fecha_matricula": "2026-06-28",
             "promedio": 0.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -90,7 +90,7 @@
             "nombre": "Emily Olmedo",
             "correo": "emi.olmedo@gmail.com",
             "telefono": "1234567890",
-            "fecha_matricula": "2026-06-15",
+            "fecha_matricula": "2026-06-28",
             "promedio": 9.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -105,7 +105,7 @@
             "nombre": "Carlos Lopez",
             "correo": "clopez@est.uleam.edu.ec",
             "telefono": "0961111111",
-            "fecha_matricula": "2026-06-15",
+            "fecha_matricula": "2026-06-28",
             "promedio": 0.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -117,7 +117,19 @@
             "nombre": "Diana Vera",
             "correo": "dvera@est.uleam.edu.ec",
             "telefono": "0962222222",
-            "fecha_matricula": "2026-06-15",
+            "fecha_matricula": "2026-06-28",
+            "promedio": 0.0,
+            "estado_academico": "Activo",
+            "sede": "Sede Manta",
+            "carrera": "Ingeniería en Sistemas",
+            "calificaciones": {}
+        },
+        {
+            "id": 202,
+            "nombre": "Paola Mendoza",
+            "correo": "pao.mendoza@gmail.com",
+            "telefono": "1234567890",
+            "fecha_matricula": "2026-06-28",
             "promedio": 0.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -152,10 +164,14 @@
             "docente_id": 10,
             "asignatura_id": "A001",
             "sede_id": 1,
+            "estudiante_ids": [
+                2,
+                200
+            ],
             "modalidad": {
                 "id_modalidad": 1,
                 "tipo": "Presencial",
-                "descripcion": "Modalidad del paralelo",
+                "descripcion": "Clase dictada en aula fisica.",
                 "duracion_horas": 2
             },
             "horario": {
@@ -172,10 +188,13 @@
             "docente_id": 101,
             "asignatura_id": "A002",
             "sede_id": 1,
+            "estudiante_ids": [
+                201
+            ],
             "modalidad": {
                 "id_modalidad": 2,
                 "tipo": "Presencial",
-                "descripcion": "Modalidad del paralelo",
+                "descripcion": "Clase dictada en aula fisica.",
                 "duracion_horas": 2
             },
             "horario": {
@@ -185,6 +204,25 @@
                 "hora_fin": "10:00",
                 "aula": "Aula 102"
             }
+        }
+    ],
+    "ofertas": [
+        {
+            "id_oferta": 1,
+            "carrera_id": 1,
+            "modalidad": {
+                "id_modalidad": 1,
+                "tipo": "Presencial",
+                "descripcion": "Clase dictada en aula fisica.",
+                "duracion_horas": 2
+            },
+            "cupos_total": 40,
+            "cupos_ocupados": 0,
+            "puntaje_minimo": 600.0,
+            "puntaje_maximo": 1000.0,
+            "fecha_apertura": "2026-06-28",
+            "fecha_cierre": "2026-12-31",
+            "sede_id": 1
         }
     ]
 }
