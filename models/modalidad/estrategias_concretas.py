@@ -5,7 +5,7 @@ class EstrategiaPresencial(EstrategiaModalidad):
     def descripcion(self):
         return "Clase dictada en aula fisica."
 
-    def duracion_horas(self) -> int:
+    def duracion_horas(self):
         return 2
 
 
