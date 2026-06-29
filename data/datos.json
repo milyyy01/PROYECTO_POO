@@ -189,7 +189,8 @@
             "asignatura_id": "A002",
             "sede_id": 1,
             "estudiante_ids": [
-                201
+                201,
+                202
             ],
             "modalidad": {
                 "id_modalidad": 2,
