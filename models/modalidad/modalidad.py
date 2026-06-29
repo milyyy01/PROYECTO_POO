@@ -76,10 +76,10 @@ class Modalidad:
     def es_presencial(self):
         return self.tipo == "Presencial"
 
-    def es_virtual(self) -> bool:
+    def es_virtual(self):
         return self.tipo == "Virtual"
 
-    def es_semi_presencial(self) -> bool:
+    def es_semi_presencial(self):
         return self.tipo in {"Semipresencial", "Híbrida"}
 
     def __str__(self):

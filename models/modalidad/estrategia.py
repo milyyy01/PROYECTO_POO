@@ -9,8 +9,8 @@ class EstrategiaModalidad(ABC):
     """
 
     @abstractmethod
-    def descripcion(self) -> str:
+    def descripcion(self):
         pass
 
-    def duracion_horas(self) -> int:
+    def duracion_horas(self):
         return 2
