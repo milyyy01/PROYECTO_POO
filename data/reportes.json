@@ -86,5 +86,13 @@
         "cuerpo": "INFORMACION DEL DOCENTE:\n >> Titulo       : Magister en Software\n >> Especialidad : Bases de Datos\n >> Nivel        : Senior\n >> Horas asign. : 12\n >> Sede         : Sede Manta\n >> Materias     : 0\n >> Paralelos    : 0\n",
         "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
         "eliminado": false
+    },
+    {
+        "tipo_reporte": "Académico - Calificaciones",
+        "fecha_generacion": "2026-06-29T20:28:35.951143",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nTITULO: Historial de Calificaciones\nSOLICITADO POR: Emily Olmedo\n----------------------------------------",
+        "cuerpo": "DETALLE DE REGISTROS:\n -> Base de Datos - Nota 1: 8.50 -> Aprobado\n -> Programación OO - Nota 1: 9.50 -> Aprobado\n -> Promedio general: 9.00\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
     }
 ]
