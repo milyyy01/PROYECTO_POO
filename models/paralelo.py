@@ -79,6 +79,22 @@ class Paralelo:
         self._horario = horario
         print(f"Horario actualizado en el paralelo '{self._codigo}': {horario}")
 
+    def aumentar_cupos(self, cantidad):
+        if cantidad <= 0:
+            raise ValueError("La cantidad de cupos extra debe ser mayor a cero.")
+        self.capacidad += cantidad
+        self._cupo_disponible += cantidad
+        print(f"Se agregaron {cantidad} cupos al paralelo '{self._codigo}'.")
+
+    def reasignar_docente(self, nuevo_docente: "Docente"):
+        if not nuevo_docente:
+            raise ValueError("Debes seleccionar un docente valido.")
+        if self._docente:
+            self._docente._retirar_paralelo(self)
+        self._docente = nuevo_docente
+        self._docente._asignar_paralelo(self)
+        print(f"Docente reasignado en el paralelo '{self._codigo}': {nuevo_docente.nombre}")
+
     def retirar_estudiante(self, estudiante: "Estudiante"):
         if estudiante in self.__lista_estudiantes:
             self.__lista_estudiantes.remove(estudiante)

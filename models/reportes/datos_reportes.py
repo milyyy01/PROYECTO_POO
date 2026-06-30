@@ -1,9 +1,17 @@
 def obtener_datos_calificaciones(estudiante):
     datos = []
     calificaciones = estudiante.ver_calificaciones()
-    for materia, nota in calificaciones.items():
-        estado_nota = "Aprobado" if nota >= 7.0 else "Reprobado"
-        datos.append(f"{materia}: {nota:.2f} -> {estado_nota}")
+    for materia, notas in calificaciones.items():
+        if not isinstance(notas, list):
+            notas = [{"nota": float(notas), "comentario": ""}]
+        for indice, registro in enumerate(notas, start=1):
+            nota = float(registro.get("nota", registro) if isinstance(registro, dict) else registro)
+            comentario = registro.get("comentario", "") if isinstance(registro, dict) else ""
+            estado_nota = "Aprobado" if nota >= 7.0 else "Reprobado"
+            linea = f"{materia} - Nota {indice}: {nota:.2f} -> {estado_nota}"
+            if comentario:
+                linea += f" | {comentario}"
+            datos.append(linea)
     if not datos:
         datos = ["Sin calificaciones registradas."]
     datos.append(f"Promedio general: {estudiante.promedio:.2f}")

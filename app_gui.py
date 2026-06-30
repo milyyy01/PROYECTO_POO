@@ -37,6 +37,17 @@ from models.administrador import Administrador
 from models.Sistema_fachada import SistemaFachada
 
 
+def password_repetida(contrasena):
+    usuarios = [*estado.admins, *estado.docentes, *estado.estudiantes]
+    return any(usuario.verificar_contrasena(contrasena) for usuario in usuarios)
+
+
+def validar_password_nueva(contrasena):
+    usuario.Usuario.validar_contrasena(contrasena)
+    if password_repetida(contrasena):
+        raise ValueError("La contraseña ya está en uso por otro usuario.")
+
+
 # UTILIDAD: capturar prints del sistema en la consola de la GUI
 
 class ConsolaGUI:
@@ -311,8 +322,19 @@ def cargar_datos():
                 estado_academico=e.get("estado_academico", "Activo"),
             )
 
-            for materia, nota in e.get("calificaciones", {}).items():
-                estudiante._registrar_calificacion(materia, float(nota))
+            for materia, notas in e.get("calificaciones", {}).items():
+                if isinstance(notas, list):
+                    for registro in notas:
+                        if isinstance(registro, dict):
+                            estudiante._registrar_calificacion(
+                                materia,
+                                float(registro.get("nota", 0)),
+                                registro.get("comentario", ""),
+                            )
+                        else:
+                            estudiante._registrar_calificacion(materia, float(registro))
+                else:
+                    estudiante._registrar_calificacion(materia, float(notas))
 
             estado.estudiantes.append(estudiante)
 
@@ -507,6 +529,12 @@ def importar_docentes_csv(ruta_archivo):
                         errores.append(f"Fila {fila_num}: campos incompletos.")
                         continue
 
+                    try:
+                        validar_password_nueva(contrasena)
+                    except ValueError as ex:
+                        errores.append(f"Fila {fila_num}: {ex}")
+                        continue
+
                     if any(d.id == id_docente for d in estado.docentes):
                         errores.append(f"Fila {fila_num}: ya existe un docente con ID {id_docente}.")
                         continue
@@ -568,6 +596,12 @@ def importar_estudiantes_csv(ruta_archivo):
 
                     if not all([nombre, correo, contrasena, telefono, sede_nombre, carrera_nombre]):
                         errores.append(f"Fila {fila_num}: campos incompletos.")
+                        continue
+
+                    try:
+                        validar_password_nueva(contrasena)
+                    except ValueError as ex:
+                        errores.append(f"Fila {fila_num}: {ex}")
                         continue
 
                     if any(e.id == id_estudiante for e in estado.estudiantes):
@@ -764,9 +798,18 @@ def texto_calificaciones(estudiante):
         return f"{estudiante.nombre} no tiene calificaciones registradas."
 
     lineas = [f"Calificaciones de {estudiante.nombre}", ""]
-    for materia, nota in calificaciones.items():
-        estado_nota = "Aprobado" if nota >= 7.0 else "Reprobado"
-        lineas.append(f"{materia}: {nota:.2f} -> {estado_nota}")
+    for materia, notas in calificaciones.items():
+        if not isinstance(notas, list):
+            notas = [{"nota": float(notas), "comentario": ""}]
+        lineas.append(materia)
+        for indice, registro in enumerate(notas, start=1):
+            nota = float(registro.get("nota", registro) if isinstance(registro, dict) else registro)
+            comentario = registro.get("comentario", "") if isinstance(registro, dict) else ""
+            estado_nota = "Aprobado" if nota >= 7.0 else "Reprobado"
+            detalle = f"  Nota {indice}: {nota:.2f} -> {estado_nota}"
+            if comentario:
+                detalle += f" | {comentario}"
+            lineas.append(detalle)
     lineas.append("")
     lineas.append(f"Promedio actual: {estudiante.promedio:.2f}")
     return "\n".join(lineas)
@@ -1636,6 +1679,8 @@ class TabDocentes(tk.Frame):
                 messagebox.showwarning("Duplicado", "Ya existe un docente con ese correo.")
                 return
 
+            validar_password_nueva(valores["ContraseÃ±a"])
+
             docente = Docente(
                 id=id_docente,
                 nombre=valores["Nombre"],
@@ -1820,6 +1865,8 @@ class TabEstudiantes(tk.Frame):
             if any(e.correo == valores["Correo"] for e in estado.estudiantes):
                 messagebox.showwarning("Duplicado", "Ya existe un estudiante con ese correo.")
                 return
+
+            validar_password_nueva(valores["ContraseÃ±a"])
 
             sede_sel = self._cb_sede.get()
             carrera_sel = self._cb_carrera.get()
@@ -2142,6 +2189,29 @@ class TabParalelos(tk.Frame):
         )
 
         separador(self)
+        acciones = frame(self)
+        acciones.pack(pady=4)
+
+        lbl(acciones, "Cupos extra").grid(row=0, column=0, sticky="w", pady=3)
+        self._e_cupos_extra = entry(acciones, width=10)
+        self._e_cupos_extra.insert(0, "5")
+        self._e_cupos_extra.grid(row=0, column=1, sticky="w", pady=3, padx=8)
+        btn(acciones, "Agregar cupos", self._agregar_cupos_extra, color=COLORS["success"]).grid(
+            row=0, column=2, padx=6
+        )
+
+        lbl(acciones, "Nuevo docente").grid(row=1, column=0, sticky="w", pady=3)
+        self._cb_docente_reasignar = combo(acciones, [])
+        self._cb_docente_reasignar.grid(row=1, column=1, pady=3, padx=8)
+        btn(acciones, "Reasignar docente", self._reasignar_docente, color=COLORS["warning"]).grid(
+            row=1, column=2, padx=6
+        )
+
+        btn(acciones, "Ver estudiantes del paralelo", self._ver_estudiantes_paralelo, color=COLORS["accent"]).grid(
+            row=2, column=0, columnspan=3, pady=8
+        )
+
+        separador(self)
         lbl(self, "Paralelos registrados", bold=True).pack()
         self._lista = tk.Listbox(
             self, bg=COLORS["bg"], fg=COLORS["text"],
@@ -2208,6 +2278,67 @@ class TabParalelos(tk.Frame):
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
 
+    def _paralelo_de_lista(self):
+        seleccion = self._lista.curselection()
+        if not seleccion:
+            return None
+        texto = self._lista.get(seleccion[0]).strip()
+        codigo = texto.split(" ")[0]
+        return next((p for p in estado.paralelos if p.codigo == codigo), None)
+
+    def _agregar_cupos_extra(self):
+        if not self._validar_sistema(): return
+        try:
+            paralelo = self._paralelo_de_lista()
+            if not paralelo:
+                messagebox.showwarning("Paralelo", "Selecciona un paralelo de la lista.")
+                return
+            cantidad = int(self._e_cupos_extra.get() or 0)
+            estado.sistema.aumentar_cupos_paralelo(paralelo, cantidad)
+            guardar_datos()
+            self.refrescar()
+            messagebox.showinfo("OK", f"Se agregaron {cantidad} cupos a '{paralelo.codigo}'.")
+        except Exception as ex:
+            messagebox.showerror("Error", str(ex))
+
+    def _reasignar_docente(self):
+        if not self._validar_sistema(): return
+        try:
+            paralelo = self._paralelo_de_lista()
+            docente = next((d for d in estado.docentes if d.nombre == self._cb_docente_reasignar.get()), None)
+            if not paralelo or not docente:
+                messagebox.showwarning("Faltan datos", "Selecciona un paralelo y un docente.")
+                return
+            if not messagebox.askyesno("Reasignar docente", f"Reasignar '{paralelo.codigo}' a {docente.nombre}?"):
+                return
+            estado.sistema.reasignar_docente_paralelo(paralelo, docente)
+            guardar_datos()
+            self.refrescar()
+            messagebox.showinfo("OK", f"Docente reasignado en '{paralelo.codigo}'.")
+        except Exception as ex:
+            messagebox.showerror("Error", str(ex))
+
+    def _ver_estudiantes_paralelo(self):
+        paralelo = self._paralelo_de_lista()
+        if not paralelo:
+            messagebox.showwarning("Paralelo", "Selecciona un paralelo de la lista.")
+            return
+        materia = paralelo.asignatura.nombre if paralelo.asignatura else "Sin asignatura"
+        lineas = [
+            f"Paralelo: {paralelo.codigo}",
+            f"Asignatura: {materia}",
+            f"Docente: {paralelo.docente.nombre if paralelo.docente else 'Sin docente'}",
+            f"Cupos: {paralelo.cupo_disponible}/{paralelo.capacidad}",
+            "",
+            "Estudiantes:",
+        ]
+        if paralelo.estudiantes:
+            for indice, estudiante in enumerate(paralelo.estudiantes, start=1):
+                lineas.append(f"{indice}. {estudiante.nombre} | {estudiante.correo}")
+        else:
+            lineas.append("No hay estudiantes registrados.")
+        mostrar_texto("Estudiantes del paralelo", "\n".join(lineas))
+
     def _validar_sistema(self):
         if not estado.sistema:
             messagebox.showwarning("Sistema", "Primero inicia el sistema en la pestaña Inicio.")
@@ -2216,6 +2347,7 @@ class TabParalelos(tk.Frame):
 
     def refrescar(self):
         self._cb_docente["values"] = [d.nombre for d in estado.docentes]
+        self._cb_docente_reasignar["values"] = [d.nombre for d in estado.docentes]
         self._cb_sede["values"] = [s.nombre_sede for s in estado.sedes]
         self._cb_asignatura["values"] = [a.nombre for a in estado.asignaturas]
 
@@ -2225,7 +2357,7 @@ class TabParalelos(tk.Frame):
             horario = paralelo.horario
             self._lista.insert(
                 tk.END,
-                f"{paralelo.codigo} — {asignatura} | {paralelo.docente.nombre} | {horario.dia} {horario.hora_inicio}-{horario.hora_fin}"
+                f"{paralelo.codigo} — {asignatura} | {paralelo.docente.nombre} | Cupos {paralelo.cupo_disponible}/{paralelo.capacidad} | {horario.dia} {horario.hora_inicio}-{horario.hora_fin}"
             )
 
 
@@ -2257,6 +2389,10 @@ class TabMatricula(tk.Frame):
 
         btn(f1, "Importar matrículas CSV", self._importar_matriculas_csv, color=COLORS["warning"]).grid(
             row=4, column=0, columnspan=2, pady=(0, 10)
+        )
+
+        btn(f1, "Retirar del paralelo", self._retirar_paralelo, color=COLORS["error"]).grid(
+            row=5, column=0, columnspan=2, pady=(0, 10)
         )
 
         separador(self)
@@ -2301,6 +2437,28 @@ class TabMatricula(tk.Frame):
             self.refrescar()
             self._limpiar_seleccion()
             messagebox.showinfo("OK", f"'{est.nombre}' matriculado en paralelo '{par.codigo}'.")
+        except Exception as ex:
+            messagebox.showerror("Error", str(ex))
+
+    def _retirar_paralelo(self):
+        if not self._validar_sistema(): return
+        try:
+            est_n = self._cb_est_par.get()
+            est = next((e for e in estado.estudiantes if e.nombre == est_n), None)
+            par = self._paralelo_seleccionado()
+            if not est or not par:
+                messagebox.showwarning("Faltan datos", "Selecciona estudiante y paralelo.")
+                return
+            if est not in par.estudiantes:
+                messagebox.showwarning("Matrícula", "El estudiante no pertenece a ese paralelo.")
+                return
+            if not messagebox.askyesno("Retirar estudiante", f"¿Retirar a '{est.nombre}' de '{par.codigo}'?"):
+                return
+            estado.sistema.retirar_estudiante_de_paralelo(est, par)
+            guardar_datos()
+            self.refrescar()
+            self._limpiar_seleccion()
+            messagebox.showinfo("OK", f"'{est.nombre}' fue retirado de '{par.codigo}'.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
 

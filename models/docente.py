@@ -54,9 +54,10 @@ class Docente(Usuario):
         else:
             print("Calificaciones registradas:")
             for estudiante, materias in self.__calificaciones_registradas.items():
-                for materia, nota in materias.items():
-                    estado = "Aprobado" if nota >= 7.0 else "Reprobado"
-                    print(f" {estudiante} - {materia}: {nota:.2f} -> {estado}")
+                for materia, notas in materias.items():
+                    for indice, nota in enumerate(notas, start=1):
+                        estado = "Aprobado" if nota >= 7.0 else "Reprobado"
+                        print(f" {estudiante} - {materia} #{indice}: {nota:.2f} -> {estado}")
                     
 # Métodos concretos de Docente:
 
@@ -71,9 +72,11 @@ class Docente(Usuario):
             raise ValueError("La nota debe estar entre 0.0 y 10.0.")
         if estudiante.nombre not in self.__calificaciones_registradas:
             self.__calificaciones_registradas[estudiante.nombre] = {}
-        self.__calificaciones_registradas[estudiante.nombre][asignatura.nombre] = nota
+        if asignatura.nombre not in self.__calificaciones_registradas[estudiante.nombre]:
+            self.__calificaciones_registradas[estudiante.nombre][asignatura.nombre] = []
+        self.__calificaciones_registradas[estudiante.nombre][asignatura.nombre].append(nota)
         
-        estudiante._registrar_calificacion(asignatura.nombre, nota)
+        estudiante._registrar_calificacion(asignatura.nombre, nota, comentario)
         mensaje = f"Calificación registrada para {estudiante.nombre} en {asignatura.nombre}: {nota:.2f}"
         if comentario:
             mensaje += f". Comentario: {comentario}"
@@ -107,6 +110,10 @@ class Docente(Usuario):
     def _asignar_paralelo(self, paralelo: "Paralelo"):
         if paralelo not in self.__paralelos:
             self.__paralelos.append(paralelo)
+
+    def _retirar_paralelo(self, paralelo: "Paralelo"):
+        if paralelo in self.__paralelos:
+            self.__paralelos.remove(paralelo)
             
     def _agregar_horas(self, horas):
         if horas <= 0:

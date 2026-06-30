@@ -451,6 +451,17 @@ class GestorNivelacion(IGestorEstudiantes, IGestorDocentes, IGestorAcademico, IG
     ) -> None:
         self._svc_matricula.matricular_en_paralelo(estudiante, paralelo)
 
+    def retirar_estudiante_de_paralelo(
+        self, estudiante: Estudiante, paralelo: Paralelo
+    ) -> None:
+        paralelo.retirar_estudiante(estudiante)
+
+    def aumentar_cupos_paralelo(self, paralelo: Paralelo, cantidad: int) -> None:
+        paralelo.aumentar_cupos(cantidad)
+
+    def reasignar_docente_paralelo(self, paralelo: Paralelo, docente: Docente) -> None:
+        paralelo.reasignar_docente(docente)
+
     # ── IGestorReportes ───────────────────────────────────────────────────────
 
     def generar_reporte_calificaciones(self, estudiante: Estudiante) -> Reporte:

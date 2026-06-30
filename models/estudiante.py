@@ -29,7 +29,7 @@ class Estudiante(Usuario):
 
     @property
     def calificaciones(self):
-        return dict(self.__calificaciones)
+        return {materia: list(notas) for materia, notas in self.__calificaciones.items()}
     
 # Métodos abstractos implementados:
 
@@ -48,11 +48,13 @@ class Estudiante(Usuario):
             return {}
         else:
             print("Calificaciones:")
-            for materia, calificacion in self.__calificaciones.items():
-                estado = "Aprobado" if calificacion >= 7.0 else "Reprobado"
-                print(f"  {materia}: {calificacion:.2f} -> {estado}")
+            for materia, notas in self.__calificaciones.items():
+                for indice, registro in enumerate(notas, start=1):
+                    nota = registro["nota"]
+                    estado = "Aprobado" if nota >= 7.0 else "Reprobado"
+                    print(f"  {materia} #{indice}: {nota:.2f} -> {estado}")
             print(f"  Promedio actual: {self.__promedio:.2f}")
-            return dict(self.__calificaciones)
+            return self.calificaciones
                 
 # Métodos concretos de Estudiante:
 
@@ -93,13 +95,23 @@ class Estudiante(Usuario):
         if asignatura not in self.__materias:
             self.__materias.append(asignatura)
         
-    def _registrar_calificacion(self, materia, nota):
-        self.__calificaciones[materia] = nota
+    def _registrar_calificacion(self, materia, nota, comentario=None):
+        if materia not in self.__calificaciones:
+            self.__calificaciones[materia] = []
+        self.__calificaciones[materia].append({
+            "nota": float(nota),
+            "comentario": comentario or "",
+        })
         self.__actualizar_promedio()
         
     def __actualizar_promedio(self):
         if self.__calificaciones:
-            self.__promedio = sum(self.__calificaciones.values()) / len(self.__calificaciones)
+            notas = [
+                registro["nota"]
+                for registros_materia in self.__calificaciones.values()
+                for registro in registros_materia
+            ]
+            self.__promedio = sum(notas) / len(notas) if notas else 0.0
            
     def to_dict(self):
         return {

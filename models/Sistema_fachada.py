@@ -137,6 +137,15 @@ class SistemaFachada:
     def asignar_estudiante_a_paralelo(self, estudiante, paralelo) -> None:
         self._gestor.asignar_estudiante_a_paralelo(estudiante, paralelo)
 
+    def retirar_estudiante_de_paralelo(self, estudiante, paralelo) -> None:
+        self._gestor.retirar_estudiante_de_paralelo(estudiante, paralelo)
+
+    def aumentar_cupos_paralelo(self, paralelo, cantidad: int) -> None:
+        self._gestor.aumentar_cupos_paralelo(paralelo, cantidad)
+
+    def reasignar_docente_paralelo(self, paralelo, docente) -> None:
+        self._gestor.reasignar_docente_paralelo(paralelo, docente)
+
     # ── MATRÍCULA Y CALIFICACIONES ───────────────────────────────────────────
 
     def matricular_en_carrera(self, estudiante, oferta, puntaje: float) -> None:
