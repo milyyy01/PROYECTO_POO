@@ -94,5 +94,29 @@
         "cuerpo": "DETALLE DE REGISTROS:\n -> Base de Datos - Nota 1: 8.50 -> Aprobado\n -> Programación OO - Nota 1: 9.50 -> Aprobado\n -> Promedio general: 9.00\n",
         "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
         "eliminado": false
+    },
+    {
+        "tipo_reporte": "Sede - Resumen",
+        "fecha_generacion": "2026-07-01T21:17:10.573478",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE SEDE\nTITULO : Resumen de Sede\nSEDE   : Sede El Carmen\n----------------------------------------",
+        "cuerpo": "DETALLE DE SEDE:\n >> Ciudad       : El Carmen\n >> Direccion    : Av. Universitaria s/n\n >> Capacidad    : 500\n >> Paralelos    : 1\n >> Carreras     : 0\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Sede - Resumen",
+        "fecha_generacion": "2026-07-01T21:24:04.913486",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE SEDE\nTITULO : Resumen de Sede\nSEDE   : Sede El Carmen\n----------------------------------------",
+        "cuerpo": "DETALLE DE SEDE:\n >> Ciudad       : El Carmen\n >> Direccion    : Av. Universitaria s/n\n >> Capacidad    : 500\n >> Paralelos    : 1\n >> Carreras     : 0\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Académico - Calificaciones",
+        "fecha_generacion": "2026-07-01T21:24:26.437904",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nTITULO: Historial de Calificaciones\nSOLICITADO POR: Paola Mendoza\n----------------------------------------",
+        "cuerpo": "DETALLE DE REGISTROS:\n -> Sin calificaciones registradas.\n -> Promedio general: 0.00\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
     }
 ]

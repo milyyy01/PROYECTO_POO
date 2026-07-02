@@ -191,6 +191,15 @@
             "cupos_maximos": 30,
             "docente_id": 101,
             "carrera_id": 1
+        },
+        {
+            "id_asignatura": "A003",
+            "nombre": "Haking Etico",
+            "contenido": "Introduccion, manejo y practica sonbre Hacking",
+            "creditos": 4,
+            "cupos_maximos": 30,
+            "docente_id": 13,
+            "carrera_id": 1
         }
     ],
     "paralelos": [
@@ -241,6 +250,29 @@
                 "hora_inicio": "08:00",
                 "hora_fin": "10:00",
                 "aula": "Aula 102"
+            }
+        },
+        {
+            "codigo": "HAK-A",
+            "capacidad": 30,
+            "docente_id": 13,
+            "asignatura_id": "A003",
+            "sede_id": 3,
+            "estudiante_ids": [
+                202
+            ],
+            "modalidad": {
+                "id_modalidad": 3,
+                "tipo": "Presencial",
+                "descripcion": "Clase dictada en aula fisica.",
+                "duracion_horas": 2
+            },
+            "horario": {
+                "id_horario": "H003",
+                "dia": "Martes",
+                "hora_inicio": "10:00",
+                "hora_fin": "12:00",
+                "aula": "Aula 105"
             }
         }
     ],

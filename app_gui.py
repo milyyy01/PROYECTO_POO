@@ -2058,6 +2058,42 @@ class TabAsignaturas(tk.Frame):
             foreground=COLORS["text"]
         )
 
+        separador(self)
+        lbl(self, "Estudiantes registrados por materia", bold=True).pack()
+
+        columnas_matriculas = ("materia", "paralelo", "estudiante", "carrera", "docente", "horario")
+        self._tabla_por_materia = ttk.Treeview(
+            self,
+            columns=columnas_matriculas,
+            show="headings",
+            height=6,
+            style="TablaSIGEN.Treeview"
+        )
+
+        encabezados_matriculas = (
+            ("materia", "Asignatura", 190),
+            ("paralelo", "Paralelo", 90),
+            ("estudiante", "Estudiante", 170),
+            ("carrera", "Carrera", 190),
+            ("docente", "Docente", 160),
+            ("horario", "Horario", 170),
+        )
+        for columna, titulo, ancho in encabezados_matriculas:
+            self._tabla_por_materia.heading(columna, text=titulo)
+            self._tabla_por_materia.column(columna, width=ancho, anchor="w")
+
+        self._tabla_por_materia.pack(fill="x", padx=20, pady=6)
+        self._tabla_por_materia.tag_configure(
+            "fila_par",
+            background=COLORS["bg"],
+            foreground=COLORS["text"]
+        )
+        self._tabla_por_materia.tag_configure(
+            "fila_impar",
+            background=COLORS["surface"],
+            foreground=COLORS["text"]
+        )
+
     def _registrar(self):
         if not self._validar_sistema(): return
         try:
@@ -2116,6 +2152,7 @@ class TabAsignaturas(tk.Frame):
 
         for item in self._tabla.get_children():
             self._tabla.delete(item)
+        self._tabla_por_materia.delete(*self._tabla_por_materia.get_children())
 
         for i, asig in enumerate(estado.asignaturas):
             docente = asig.docente.nombre if asig.docente else "Sin docente"
@@ -2145,6 +2182,46 @@ class TabAsignaturas(tk.Frame):
                 ),
                 tags=(etiqueta,)
             )
+
+        fila = 0
+        for asig in estado.asignaturas:
+            paralelos = [p for p in estado.paralelos if p.asignatura == asig]
+            if not paralelos:
+                etiqueta = "fila_par" if fila % 2 == 0 else "fila_impar"
+                docente = asig.docente.nombre if asig.docente else "Sin docente"
+                self._tabla_por_materia.insert(
+                    "",
+                    tk.END,
+                    values=(asig.nombre, "Sin paralelo", "Sin estudiantes", "Sin carrera", docente, "Sin horario"),
+                    tags=(etiqueta,)
+                )
+                fila += 1
+                continue
+
+            for paralelo in paralelos:
+                docente = paralelo.docente.nombre if paralelo.docente else "Sin docente"
+                horario = paralelo.horario
+                texto_horario = f"{horario.dia} {horario.hora_inicio}-{horario.hora_fin} | {horario.aula or 'Sin aula'}"
+                if paralelo.estudiantes:
+                    for estudiante in paralelo.estudiantes:
+                        carrera = estudiante.carrera.nombre_carrera if estudiante.carrera else "Sin carrera"
+                        etiqueta = "fila_par" if fila % 2 == 0 else "fila_impar"
+                        self._tabla_por_materia.insert(
+                            "",
+                            tk.END,
+                            values=(asig.nombre, paralelo.codigo, estudiante.nombre, carrera, docente, texto_horario),
+                            tags=(etiqueta,)
+                        )
+                        fila += 1
+                else:
+                    etiqueta = "fila_par" if fila % 2 == 0 else "fila_impar"
+                    self._tabla_por_materia.insert(
+                        "",
+                        tk.END,
+                        values=(asig.nombre, paralelo.codigo, "Sin estudiantes", "Sin carrera", docente, texto_horario),
+                        tags=(etiqueta,)
+                    )
+                    fila += 1
 
 
 # TAB 6 — PARALELOS
