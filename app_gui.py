@@ -2308,8 +2308,12 @@ class TabParalelos(tk.Frame):
             row=1, column=2, padx=6
         )
 
+        lbl(acciones, "Paralelo").grid(row=2, column=0, sticky="w", pady=3)
+        self._cb_paralelo_accion = combo(acciones, [], width=34)
+        self._cb_paralelo_accion.grid(row=2, column=1, columnspan=2, sticky="w", pady=3, padx=8)
+
         btn(acciones, "Ver estudiantes del paralelo", self._ver_estudiantes_paralelo, color=COLORS["accent"]).grid(
-            row=2, column=0, columnspan=3, pady=8
+            row=3, column=0, columnspan=3, pady=8
         )
 
         separador(self)
@@ -2320,6 +2324,7 @@ class TabParalelos(tk.Frame):
             selectbackground=COLORS["accent"],
         )
         self._lista.pack(fill="x", padx=20, pady=6)
+        self._lista.bind("<<ListboxSelect>>", self._sincronizar_paralelo_seleccionado)
 
     def _registrar(self):
         if not self._validar_sistema(): return
@@ -2375,17 +2380,40 @@ class TabParalelos(tk.Frame):
             estado.horarios.append(horario)
             guardar_datos()
             self._lista.insert(tk.END, f"  {paralelo.codigo} — {asignatura.nombre} | {docente.nombre} | {horario.dia} {horario.hora_inicio}-{horario.hora_fin}")
+            self.refrescar()
+            self._cb_paralelo_accion.set(self._texto_paralelo_detallado(paralelo))
             messagebox.showinfo("OK", f"Paralelo '{paralelo.codigo}' creado.")
         except Exception as ex:
             messagebox.showerror("Error", str(ex))
 
     def _paralelo_de_lista(self):
+        seleccion_combo = self._cb_paralelo_accion.get()
+        for texto, paralelo in getattr(self, "_opciones_paralelo_accion", []):
+            if texto == seleccion_combo:
+                return paralelo
+
+        return self._paralelo_desde_lista()
+
+    def _paralelo_desde_lista(self):
         seleccion = self._lista.curselection()
         if not seleccion:
             return None
         texto = self._lista.get(seleccion[0]).strip()
         codigo = texto.split(" ")[0]
         return next((p for p in estado.paralelos if p.codigo == codigo), None)
+
+    def _sincronizar_paralelo_seleccionado(self, _event=None):
+        paralelo = self._paralelo_desde_lista()
+        if paralelo:
+            self._cb_paralelo_accion.set(self._texto_paralelo_detallado(paralelo))
+
+    def _texto_paralelo_detallado(self, paralelo):
+        asignatura = paralelo.asignatura.nombre if paralelo.asignatura else "Sin asignatura"
+        horario = paralelo.horario
+        return (
+            f"{paralelo.codigo} — {asignatura} | {paralelo.docente.nombre} | "
+            f"{horario.dia} {horario.hora_inicio}-{horario.hora_fin}"
+        )
 
     def _agregar_cupos_extra(self):
         if not self._validar_sistema(): return
@@ -2451,6 +2479,15 @@ class TabParalelos(tk.Frame):
         self._cb_docente_reasignar["values"] = [d.nombre for d in estado.docentes]
         self._cb_sede["values"] = [s.nombre_sede for s in estado.sedes]
         self._cb_asignatura["values"] = [a.nombre for a in estado.asignaturas]
+        self._opciones_paralelo_accion = [
+            (self._texto_paralelo_detallado(paralelo), paralelo)
+            for paralelo in estado.paralelos
+        ]
+        self._cb_paralelo_accion["values"] = [
+            texto for texto, _paralelo in self._opciones_paralelo_accion
+        ]
+        if self._opciones_paralelo_accion and not self._cb_paralelo_accion.get():
+            self._cb_paralelo_accion.set(self._opciones_paralelo_accion[0][0])
 
         self._lista.delete(0, tk.END)
         for paralelo in estado.paralelos:
