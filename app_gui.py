@@ -815,6 +815,29 @@ def texto_calificaciones(estudiante):
     return "\n".join(lineas)
 
 
+def paralelos_de_estudiante(estudiante):
+    return [paralelo for paralelo in estado.paralelos if estudiante in paralelo.estudiantes]
+
+
+def texto_horario_estudiante(estudiante):
+    paralelos = paralelos_de_estudiante(estudiante)
+    if not paralelos:
+        return f"{estudiante.nombre} no tiene horarios registrados."
+
+    lineas = [f"Horario de {estudiante.nombre}", ""]
+    for paralelo in paralelos:
+        asignatura = paralelo.asignatura.nombre if paralelo.asignatura else "Sin asignatura"
+        docente = paralelo.docente.nombre if paralelo.docente else "Sin docente"
+        modalidad = paralelo.modalidad.tipo if paralelo.modalidad else "Sin modalidad"
+        horario = paralelo.horario
+        aula = horario.aula or "Sin aula"
+        lineas.append(
+            f"{horario.dia} {horario.hora_inicio}-{horario.hora_fin} | "
+            f"{asignatura} | {paralelo.codigo} | {docente} | {modalidad} | Aula: {aula}"
+        )
+    return "\n".join(lineas)
+
+
 # VENTANA PRINCIPAL
 class LoginWindow(tk.Tk):
 
@@ -1273,6 +1296,7 @@ class AppSIGEN(tk.Tk):
             self.tabs["Resumen"] = TabResumen(self.contenido)
 
         elif isinstance(usuario, Estudiante):
+            self.tabs["Mi horario"] = TabHorarioEstudiante(self.contenido)
             self.tabs["Mis notas"] = TabCalificar(self.contenido)
             self.tabs["Mis reportes"] = TabReportes(self.contenido)
             self.tabs["Resumen"] = TabResumen(self.contenido)
@@ -2695,7 +2719,105 @@ class TabCarrerasOfertas(tk.Frame):
         )
 
 
-# TAB 8 — CALIFICAR
+# TAB 8 — HORARIO DEL ESTUDIANTE
+
+class TabHorarioEstudiante(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg=COLORS["bg"])
+        self._construir()
+
+    def _construir(self):
+        lbl(self, "Mi horario", bold=True, size=12).pack(pady=(16, 8))
+
+        f = frame(self)
+        f.pack(fill="x", padx=24, pady=(10, 14))
+
+        estudiante = estado.usuario_actual
+        lbl(f, f"Estudiante: {estudiante.nombre}", bold=True, size=11).pack(anchor="w", pady=(0, 8))
+        lbl(
+            f,
+            "Estos son los paralelos en los que estás matriculado.",
+            size=10,
+            color=COLORS["text2"]
+        ).pack(anchor="w")
+
+        columnas = ("dia", "hora", "materia", "paralelo", "docente", "modalidad", "aula")
+        self._tabla = ttk.Treeview(
+            self,
+            columns=columnas,
+            show="headings",
+            height=8,
+            style="TablaSIGEN.Treeview",
+        )
+
+        encabezados = (
+            ("dia", "Día", 120),
+            ("hora", "Hora", 120),
+            ("materia", "Materia", 180),
+            ("paralelo", "Paralelo", 100),
+            ("docente", "Docente", 180),
+            ("modalidad", "Modalidad", 130),
+            ("aula", "Aula", 120),
+        )
+        for columna, titulo, ancho in encabezados:
+            self._tabla.heading(columna, text=titulo)
+            self._tabla.column(columna, width=ancho, anchor="w")
+
+        self._tabla.pack(fill="x", padx=24, pady=8)
+        self._tabla.tag_configure("fila_par", background=COLORS["bg"], foreground=COLORS["text"])
+        self._tabla.tag_configure("fila_impar", background=COLORS["surface"], foreground=COLORS["text"])
+
+        self._mensaje = lbl(self, "", size=10, color=COLORS["text2"])
+        self._mensaje.pack(pady=10)
+
+        btn(
+            self,
+            "Ver horario en detalle",
+            self._ver_horario_detalle,
+            color=COLORS["success"]
+        ).pack(pady=8)
+
+    def refrescar(self):
+        self._tabla.delete(*self._tabla.get_children())
+        estudiante = estado.usuario_actual
+        if not isinstance(estudiante, Estudiante):
+            return
+
+        paralelos = paralelos_de_estudiante(estudiante)
+        if not paralelos:
+            self._mensaje.config(text="Todavía no tienes paralelos matriculados.")
+            return
+
+        self._mensaje.config(text=f"Total de clases registradas: {len(paralelos)}")
+        for indice, paralelo in enumerate(paralelos):
+            horario = paralelo.horario
+            asignatura = paralelo.asignatura.nombre if paralelo.asignatura else "Sin asignatura"
+            docente = paralelo.docente.nombre if paralelo.docente else "Sin docente"
+            modalidad = paralelo.modalidad.tipo if paralelo.modalidad else "Sin modalidad"
+            aula = horario.aula or "Sin aula"
+            etiqueta = "fila_par" if indice % 2 == 0 else "fila_impar"
+            self._tabla.insert(
+                "",
+                tk.END,
+                values=(
+                    horario.dia,
+                    f"{horario.hora_inicio}-{horario.hora_fin}",
+                    asignatura,
+                    paralelo.codigo,
+                    docente,
+                    modalidad,
+                    aula,
+                ),
+                tags=(etiqueta,),
+            )
+
+    def _ver_horario_detalle(self):
+        estudiante = estado.usuario_actual
+        if isinstance(estudiante, Estudiante):
+            mostrar_texto("Mi horario", texto_horario_estudiante(estudiante))
+
+
+# TAB 9 — CALIFICAR
 
 class TabCalificar(tk.Frame):
     def __init__(self, parent):
@@ -3128,6 +3250,26 @@ class TabResumen(tk.Frame):
         lbl(f, f"Correo: {estudiante.correo}", size=10).pack(pady=5)
         lbl(f, f"Estado académico: {getattr(estudiante, 'estado_academico', 'Activo')}", size=10).pack(pady=5)
         lbl(f, f"Promedio: {getattr(estudiante, 'promedio', 0.0)}", size=10).pack(pady=5)
+
+        lbl(f, "Horario:", bold=True, size=10).pack(anchor="w", pady=(12, 4))
+        paralelos = paralelos_de_estudiante(estudiante)
+        if paralelos:
+            for paralelo in paralelos:
+                horario = paralelo.horario
+                asignatura = paralelo.asignatura.nombre if paralelo.asignatura else "Sin asignatura"
+                lbl(
+                    f,
+                    f"{horario.dia} {horario.hora_inicio}-{horario.hora_fin} | {asignatura} | Aula: {horario.aula or 'Sin aula'}",
+                    size=10,
+                    color=COLORS["text2"]
+                ).pack(anchor="w", pady=2)
+        else:
+            lbl(
+                f,
+                "Todavía no tienes horarios registrados.",
+                size=10,
+                color=COLORS["text2"]
+            ).pack(anchor="w", pady=2)
 
         btn(
             f,
