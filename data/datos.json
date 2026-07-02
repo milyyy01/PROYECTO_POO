@@ -13,6 +13,13 @@
             "ciudad": "Chone",
             "direccion": "Av. Chone",
             "capacidad_total": 500
+        },
+        {
+            "id_sede": 3,
+            "nombre_sede": "Sede El Carmen",
+            "ciudad": "El Carmen",
+            "direccion": "Av. Universitaria s/n",
+            "capacidad_total": 500
         }
     ],
     "carreras": [
@@ -78,7 +85,7 @@
             "nombre": "María García",
             "correo": "mgarcia@est.uleam.edu.ec",
             "telefono": "0961234567",
-            "fecha_matricula": "2026-06-28",
+            "fecha_matricula": "2026-07-01",
             "promedio": 0.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -90,14 +97,32 @@
             "nombre": "Emily Olmedo",
             "correo": "emi.olmedo@gmail.com",
             "telefono": "1234567890",
-            "fecha_matricula": "2026-06-28",
-            "promedio": 9.0,
+            "fecha_matricula": "2026-07-01",
+            "promedio": 9.25,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
             "carrera": "Ingeniería en Sistemas",
             "calificaciones": {
-                "Base de Datos": 8.5,
-                "Programación OO": 9.5
+                "Base de Datos": [
+                    {
+                        "nota": 8.5,
+                        "comentario": ""
+                    }
+                ],
+                "Programación OO": [
+                    {
+                        "nota": 9.5,
+                        "comentario": ""
+                    },
+                    {
+                        "nota": 10.0,
+                        "comentario": "excelente trabaj0!!!"
+                    },
+                    {
+                        "nota": 9.0,
+                        "comentario": "excelente trabaj0!!!"
+                    }
+                ]
             }
         },
         {
@@ -105,7 +130,7 @@
             "nombre": "Carlos Lopez",
             "correo": "clopez@est.uleam.edu.ec",
             "telefono": "0961111111",
-            "fecha_matricula": "2026-06-28",
+            "fecha_matricula": "2026-07-01",
             "promedio": 0.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -117,7 +142,7 @@
             "nombre": "Diana Vera",
             "correo": "dvera@est.uleam.edu.ec",
             "telefono": "0962222222",
-            "fecha_matricula": "2026-06-28",
+            "fecha_matricula": "2026-07-01",
             "promedio": 0.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -129,7 +154,7 @@
             "nombre": "Paola Mendoza",
             "correo": "pao.mendoza@gmail.com",
             "telefono": "1234567890",
-            "fecha_matricula": "2026-06-28",
+            "fecha_matricula": "2026-07-01",
             "promedio": 0.0,
             "estado_academico": "Activo",
             "sede": "Sede Manta",
@@ -190,7 +215,8 @@
             "sede_id": 1,
             "estudiante_ids": [
                 201,
-                202
+                202,
+                2
             ],
             "modalidad": {
                 "id_modalidad": 2,

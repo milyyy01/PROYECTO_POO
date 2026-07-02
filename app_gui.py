@@ -1703,7 +1703,7 @@ class TabDocentes(tk.Frame):
                 messagebox.showwarning("Duplicado", "Ya existe un docente con ese correo.")
                 return
 
-            validar_password_nueva(valores["ContraseÃ±a"])
+            validar_password_nueva(valores["Contraseña"])
 
             docente = Docente(
                 id=id_docente,
@@ -1890,7 +1890,7 @@ class TabEstudiantes(tk.Frame):
                 messagebox.showwarning("Duplicado", "Ya existe un estudiante con ese correo.")
                 return
 
-            validar_password_nueva(valores["ContraseÃ±a"])
+            validar_password_nueva(valores["Contraseña"])
 
             sede_sel = self._cb_sede.get()
             carrera_sel = self._cb_carrera.get()
