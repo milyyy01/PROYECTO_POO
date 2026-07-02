@@ -274,6 +274,27 @@
                 "hora_fin": "12:00",
                 "aula": "Aula 105"
             }
+        },
+        {
+            "codigo": "sof-A",
+            "capacidad": 30,
+            "docente_id": 10,
+            "asignatura_id": "A001",
+            "sede_id": 1,
+            "estudiante_ids": [],
+            "modalidad": {
+                "id_modalidad": 4,
+                "tipo": "Presencial",
+                "descripcion": "Clase dictada en aula fisica.",
+                "duracion_horas": 2
+            },
+            "horario": {
+                "id_horario": "H004",
+                "dia": "Lunes",
+                "hora_inicio": "07:00",
+                "hora_fin": "09:00",
+                "aula": "Aula 101"
+            }
         }
     ],
     "ofertas": [
