@@ -77,6 +77,17 @@
             "nivel": "Junior",
             "horas_asignadas": 10,
             "sede": "Sede Manta"
+        },
+        {
+            "id": 13,
+            "nombre": "pablo",
+            "correo": "12345678@gmail.com",
+            "telefono": "0999235534",
+            "titulo": "Ing. Sistema",
+            "especialidad": "Hacking Etico",
+            "nivel": "8vo Semestre",
+            "horas_asignadas": 40,
+            "sede": "Sede El Carmen"
         }
     ],
     "estudiantes": [
