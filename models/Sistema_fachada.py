@@ -2,8 +2,6 @@ from logic.gestor_nivelacion import GestorNivelacion
 from models.sede import Sede
 from models.oferta import Oferta
 from models.periodo_academico import PeriodoAcademico
-from models.evaluacion import Evaluacion
-
 
 class SistemaFachada:
     """
@@ -11,8 +9,8 @@ class SistemaFachada:
 
     Unifica el acceso a GestorNivelacion (que a su vez coordina
     repositorios y servicios internos: matricula, calificaciones,
-    asignacion, reportes) junto con la gestion propia de sedes, ofertas,
-    periodos y evaluaciones.
+    asignacion, reportes) junto con la gestion propia de sedes, ofertas y
+    periodos.
 
     La interfaz grafica (app_gui.py) solo deberia interactuar con esta
     clase, sin necesidad de conocer GestorNivelacion ni los subsistemas
@@ -24,7 +22,7 @@ class SistemaFachada:
         self._sedes = []
         self._ofertas = []
         self._periodos = []
-        self._evaluaciones = []
+
 
     @property
     def nombre_institucion(self):
@@ -85,15 +83,6 @@ class SistemaFachada:
     def cerrar_periodo(self, periodo: PeriodoAcademico) -> None:
         self._gestor.cerrar_periodo(periodo)
 
-    # ── EVALUACIONES ─────────────────────────────────────────────────────────
-
-    def crear_evaluacion(self, id_eval, nombre, tipo, fecha, puntaje_max):
-        evaluacion = Evaluacion(id_eval, nombre, tipo, fecha, puntaje_max)
-        self._evaluaciones.append(evaluacion)
-        return evaluacion
-
-    def listar_evaluaciones(self):
-        return self._evaluaciones
 
     # ── ESTUDIANTES ──────────────────────────────────────────────────────────
 
