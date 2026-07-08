@@ -99,6 +99,10 @@ class Administrador(Usuario):
                 f"Departamento: {self.departamento_asignado} - "
                 f"Cupos gestionados: {self._cupos_gestionados}")
         
+
         
+        
+        
+
         
         
