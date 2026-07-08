@@ -437,15 +437,6 @@ def iniciar_sistema_automatico():
             "telefono": "0991234567",
             "nivel_autoridad": "Alto",
             "departamento_asignado": "Nivelación"
-        },
-         {
-            "id": 3,
-            "nombre": "Juan Salazar",
-            "correo": "juansalazar006@gmail.com",
-            "contrasena": "Admin123",
-            "telefono": "0991234567",
-            "nivel_autoridad": "Alto",
-            "departamento_asignado": "Nivelación"
         }
     ]
 
