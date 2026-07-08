@@ -118,5 +118,21 @@
         "cuerpo": "DETALLE DE REGISTROS:\n -> Sin calificaciones registradas.\n -> Promedio general: 0.00\n",
         "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
         "eliminado": false
+    },
+    {
+        "tipo_reporte": "Docente - Perfil",
+        "fecha_generacion": "2026-07-05T12:26:32.085075",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE DOCENTE\nTITULO  : Perfil del Docente\nDOCENTE : Juan Perez\n----------------------------------------",
+        "cuerpo": "INFORMACION DEL DOCENTE:\n >> Titulo       : Magister en Software\n >> Especialidad : Bases de Datos\n >> Nivel        : Senior\n >> Horas asign. : 12\n >> Sede         : Sede Manta\n >> Materias     : 0\n >> Paralelos    : 0\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
+    },
+    {
+        "tipo_reporte": "Docente - Perfil",
+        "fecha_generacion": "2026-07-05T13:38:50.708475",
+        "encabezado": "UNIVERSIDAD LAICA ELOY ALFARO DE MANABI (ULEAM)\nSISTEMA DE GESTION DE NIVELACION (SIGEN)\nREPORTE DE DOCENTE\nTITULO  : Perfil del Docente\nDOCENTE : Juan Cedeño\n----------------------------------------",
+        "cuerpo": "INFORMACION DEL DOCENTE:\n >> Titulo       : Ing. en Software\n >> Especialidad : Base de Datos\n >> Nivel        : Senior\n >> Horas asign. : 20\n >> Sede         : Sede Manta\n >> Materias     : 1\n >> Paralelos    : 1\n",
+        "pie_pagina": "----------------------------------------\nDocumento de uso estrictamente academico.\nGenerado automaticamente. Valido sin firma.",
+        "eliminado": false
     }
 ]

@@ -1138,11 +1138,6 @@ class AppSIGEN(tk.Tk):
         if not confirmar:
             return
 
-        try:
-            self._stdout_gui.desactivar()
-        except Exception:
-            pass
-
         estado.usuario_actual = None
         self.destroy()
 
@@ -1232,33 +1227,6 @@ class AppSIGEN(tk.Tk):
         self.contenido.grid_rowconfigure(0, weight=1)
         self.contenido.grid_columnconfigure(0, weight=1)
 
-        # Consola abajo
-        console_frame = tk.Frame(self, bg=COLORS["bg"])
-        console_frame.pack(fill="x", padx=12, pady=(0, 8))
-
-        tk.Label(
-            console_frame,
-            text="Consola del sistema",
-            font=("Segoe UI", 9, "bold"),
-            bg=COLORS["bg"],
-            fg=COLORS["text2"]
-        ).pack(anchor="w")
-
-        self.consola = scrolledtext.ScrolledText(
-            console_frame,
-            height=7,
-            state="disabled",
-            bg="#0f0f1a",
-            fg=COLORS["success"],
-            font=("Courier New", 9),
-            relief="flat",
-            insertbackground=COLORS["text"],
-        )
-        self.consola.pack(fill="x")
-
-        self._stdout_gui = ConsolaGUI(self.consola)
-        self._stdout_gui.activar()
-
         # Estilo para tablas
         style = ttk.Style()
         style.theme_use("default")
@@ -1287,40 +1255,99 @@ class AppSIGEN(tk.Tk):
             foreground=[("selected", "white")]
         )
 
-        # Crear pestañas como frames normales
+        # Crear pestañas, cada una dentro de su propio contenedor con scrollbar
         self.tabs = {}
+        self._contenedores_tabs = {}
 
         if isinstance(usuario, Docente):
-            self.tabs["Calificar"] = TabCalificar(self.contenido)
-            self.tabs["Reportes"] = TabReportes(self.contenido)
-            self.tabs["Resumen"] = TabResumen(self.contenido)
+            self._crear_tab_scrollable("Calificar", TabCalificar)
+            self._crear_tab_scrollable("Reportes", TabReportes)
+            self._crear_tab_scrollable("Resumen", TabResumen)
 
         elif isinstance(usuario, Estudiante):
-            self.tabs["Mi horario"] = TabHorarioEstudiante(self.contenido)
-            self.tabs["Mis notas"] = TabCalificar(self.contenido)
-            self.tabs["Mis reportes"] = TabReportes(self.contenido)
-            self.tabs["Resumen"] = TabResumen(self.contenido)
+            self._crear_tab_scrollable("Mi horario", TabHorarioEstudiante)
+            self._crear_tab_scrollable("Mis notas", TabCalificar)
+            self._crear_tab_scrollable("Mis reportes", TabReportes)
+            self._crear_tab_scrollable("Resumen", TabResumen)
 
         else:
-            self.tabs["Inicio"] = TabInicio(self.contenido, self)
-            self.tabs["Sedes"] = TabSede(self.contenido)
-            self.tabs["Docentes"] = TabDocentes(self.contenido)
-            self.tabs["Estudiantes"] = TabEstudiantes(self.contenido)
-            self.tabs["Asignaturas"] = TabAsignaturas(self.contenido)
-            self.tabs["Paralelos"] = TabParalelos(self.contenido)
-            self.tabs["Matrícula"] = TabMatricula(self.contenido)
-            self.tabs["Carreras y Ofertas"] = TabCarrerasOfertas(self.contenido)
-            self.tabs["Reportes"] = TabReportes(self.contenido)
-            self.tabs["Resumen"] = TabResumen(self.contenido)
+            self._crear_tab_scrollable("Inicio", TabInicio, self)
+            self._crear_tab_scrollable("Sedes", TabSede)
+            self._crear_tab_scrollable("Docentes", TabDocentes)
+            self._crear_tab_scrollable("Estudiantes", TabEstudiantes)
+            self._crear_tab_scrollable("Asignaturas", TabAsignaturas)
+            self._crear_tab_scrollable("Paralelos", TabParalelos)
+            self._crear_tab_scrollable("Matrícula", TabMatricula)
+            self._crear_tab_scrollable("Carreras y Ofertas", TabCarrerasOfertas)
+            self._crear_tab_scrollable("Reportes", TabReportes)
+            self._crear_tab_scrollable("Resumen", TabResumen)
 
         self.botones_menu = {}
 
-        for nombre, tab in self.tabs.items():
-            tab.grid(row=0, column=0, sticky="nsew")
+        for nombre in self.tabs:
+            self._contenedores_tabs[nombre].grid(row=0, column=0, sticky="nsew")
             self._crear_boton_menu(nombre)
 
         primer_tab = list(self.tabs.keys())[0]
         self._mostrar_tab(primer_tab)
+
+    def _crear_tab_scrollable(self, nombre, clase_tab, *args_extra):
+        """Crea una pestaña dentro de un Canvas con scrollbar vertical propia,
+        para que cada apartado pueda desplazarse sin que la consola tape contenido."""
+
+        contenedor = tk.Frame(self.contenido, bg=COLORS["bg"])
+
+        canvas = tk.Canvas(
+            contenedor,
+            bg=COLORS["bg"],
+            highlightthickness=0,
+            bd=0
+        )
+        scrollbar = ttk.Scrollbar(
+            contenedor,
+            orient="vertical",
+            command=canvas.yview
+        )
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        tab = clase_tab(canvas, *args_extra)
+        ventana_id = canvas.create_window((0, 0), window=tab, anchor="nw")
+
+        def _actualizar_scrollregion(_event=None, canvas=canvas):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def _ajustar_ancho(event, canvas=canvas, ventana_id=ventana_id):
+            canvas.itemconfig(ventana_id, width=event.width)
+
+        def _en_scroll_mouse(event, canvas=canvas):
+            if event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
+            else:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _activar_scroll_mouse(_event=None, canvas=canvas, cb=_en_scroll_mouse):
+            canvas.bind_all("<MouseWheel>", cb)
+            canvas.bind_all("<Button-4>", cb)
+            canvas.bind_all("<Button-5>", cb)
+
+        def _desactivar_scroll_mouse(_event=None, canvas=canvas):
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+
+        tab.bind("<Configure>", _actualizar_scrollregion)
+        canvas.bind("<Configure>", _ajustar_ancho)
+        canvas.bind("<Enter>", _activar_scroll_mouse)
+        canvas.bind("<Leave>", _desactivar_scroll_mouse)
+
+        self.tabs[nombre] = tab
+        self._contenedores_tabs[nombre] = contenedor
+        return tab
 
     def _crear_boton_menu(self, nombre):
         boton = tk.Button(
@@ -1349,7 +1376,7 @@ class AppSIGEN(tk.Tk):
         if hasattr(tab, "refrescar"):
             tab.refrescar()
 
-        tab.tkraise()
+        self._contenedores_tabs[nombre].tkraise()
 
         for texto, boton in self.botones_menu.items():
             if texto == nombre:
@@ -2293,27 +2320,27 @@ class TabParalelos(tk.Frame):
         acciones = frame(self)
         acciones.pack(pady=4)
 
-        lbl(acciones, "Cupos extra").grid(row=0, column=0, sticky="w", pady=3)
+        lbl(acciones, "Cupos extra").grid(row=0, column=0, sticky="w", pady=12)
         self._e_cupos_extra = entry(acciones, width=10)
         self._e_cupos_extra.insert(0, "5")
-        self._e_cupos_extra.grid(row=0, column=1, sticky="w", pady=3, padx=8)
+        self._e_cupos_extra.grid(row=0, column=1, sticky="w", pady=12, padx=8)
         btn(acciones, "Agregar cupos", self._agregar_cupos_extra, color=COLORS["success"]).grid(
-            row=0, column=2, padx=6
+            row=0, column=2, padx=12, pady=12
         )
 
-        lbl(acciones, "Nuevo docente").grid(row=1, column=0, sticky="w", pady=3)
+        lbl(acciones, "Nuevo docente").grid(row=1, column=0, sticky="w", pady=12)
         self._cb_docente_reasignar = combo(acciones, [])
-        self._cb_docente_reasignar.grid(row=1, column=1, pady=3, padx=8)
+        self._cb_docente_reasignar.grid(row=1, column=1, pady=12, padx=8)
         btn(acciones, "Reasignar docente", self._reasignar_docente, color=COLORS["warning"]).grid(
-            row=1, column=2, padx=6
+            row=1, column=2, padx=12, pady=12
         )
 
-        lbl(acciones, "Paralelo").grid(row=2, column=0, sticky="w", pady=3)
+        lbl(acciones, "Paralelo").grid(row=2, column=0, sticky="w", pady=12)
         self._cb_paralelo_accion = combo(acciones, [], width=34)
-        self._cb_paralelo_accion.grid(row=2, column=1, columnspan=2, sticky="w", pady=3, padx=8)
+        self._cb_paralelo_accion.grid(row=2, column=1, columnspan=2, sticky="w", pady=12, padx=8)
 
         btn(acciones, "Ver estudiantes del paralelo", self._ver_estudiantes_paralelo, color=COLORS["accent"]).grid(
-            row=3, column=0, columnspan=3, pady=8
+            row=3, column=0, columnspan=3, pady=(18, 8)
         )
 
         separador(self)
@@ -3555,4 +3582,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

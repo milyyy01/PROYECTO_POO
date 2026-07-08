@@ -16,8 +16,6 @@ class Asignatura:
         self._cupos_maximos = 0
         self._archivos_material = []
 
-#Aplicamos composición de evaluación y la creamos en una lista
-        self._evaluaciones = []
 
     @property
     def id_asignatura(self):
@@ -46,9 +44,6 @@ class Asignatura:
     def cupos_maximos(self):
         return self._cupos_maximos
 
-    @property
-    def evaluaciones(self):
-        return list(self._evaluaciones)
     
     #Metodos
 
@@ -78,21 +73,7 @@ class Asignatura:
             info += f" | Archivos: {archivos}"
         return info
 
-    #Metodo de composicion con evaluación
-    def crear_evaluacion(self, puntaje_minimo, puntaje_maximo, tipo, fecha_apertura, fecha_cierre):
-        # Importación local para evitar importación circular
-        from models.evaluacion import Evaluacion
-        nueva_evaluacion = Evaluacion(
-            puntaje_minimo=puntaje_minimo,
-            puntaje_maximo=puntaje_maximo,
-            tipo=tipo,
-            fecha_apertura=fecha_apertura,
-            fecha_cierre=fecha_cierre,
-            asignatura=self,  # COMPOSICIÓN: se pasa self como dueño
-            )
-        self._evaluaciones.append(nueva_evaluacion)
-        print(f"Evaluación '{tipo}' creada para la asignatura '{self._nombre}'.")
-        return nueva_evaluacion
+
 
     def listar_archivos(self):
             return list(self._archivos_material)
@@ -102,5 +83,5 @@ class Asignatura:
         return (
             f"[Asignatura] {self._nombre} - ID: {self._id_asignatura} - "
             f"Créditos: {self._creditos} - Cupos: {self._cupos_maximos} - "
-            f"Docente: {docente_nombre} - Evaluaciones: {len(self._evaluaciones)}"
+            f"Docente: {docente_nombre} "
         )
