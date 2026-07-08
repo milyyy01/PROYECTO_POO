@@ -2,10 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from models.usuario import Usuario
 
-if TYPE_CHECKING:
-    from models.docente import Docente
-    from models.periodo_academico import PeriodoAcademico
-    from models.sede import Sede
+
 
 class Administrador(Usuario):
     def __init__(self, id, nombre, correo, contrasena, telefono, nivel_autoridad, departamento_asignado):
